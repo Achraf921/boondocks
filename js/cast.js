@@ -233,7 +233,12 @@
       features(g, R, c, e, k);
       g.strokeStyle = c.hair; g.lineWidth = 0.06 * R; // pencil moustache + soul patch
       g.beginPath(); g.moveTo(-0.08 * R, 0.66 * R); g.quadraticCurveTo(0.16 * R, 0.58 * R, 0.4 * R, 0.66 * R); g.stroke(); g.lineCap = 'butt';
-      g.fillStyle = c.hair; g.fillRect(0.1 * R, 0.96 * R, 0.12 * R, 0.14 * R);
+      g.fillStyle = c.hair; g.beginPath(); g.moveTo(-0.04 * R, 0.92 * R); g.lineTo(0.36 * R, 0.92 * R); g.lineTo(0.26 * R, 1.2 * R); g.lineTo(0.06 * R, 1.2 * R); g.closePath(); g.fill(); // goatee
+      g.fillStyle = 'rgba(120,40,170,0.72)'; g.strokeStyle = '#e8c33a'; g.lineWidth = ol * 1.3; // the purple shades
+      g.beginPath(); g.roundRect(-0.56 * R, -0.2 * R, 0.66 * R, 0.4 * R, 0.1 * R); g.fill(); g.stroke();
+      g.beginPath(); g.roundRect(0.24 * R, -0.2 * R, 0.56 * R, 0.38 * R, 0.1 * R); g.fill(); g.stroke();
+      g.beginPath(); g.moveTo(0.1 * R, -0.08 * R); g.lineTo(0.24 * R, -0.08 * R); g.moveTo(-0.56 * R, -0.08 * R); g.lineTo(-0.9 * R, -0.02 * R); g.stroke();
+      g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = ol; g.beginPath(); g.moveTo(-0.42 * R, 0.1 * R); g.lineTo(-0.26 * R, -0.14 * R); g.stroke();
     }
     // the hat
     g.fillStyle = c.hat; g.strokeStyle = c.out; g.lineWidth = ol * 2;
@@ -351,6 +356,49 @@
     g.restore();
   }
 
+  // Ed Wuncler Sr.: the man who owns Woodcrest
+  function wunclerHead(g, R, c, e, rig, flat) {
+    const ol = rig.ol, k = { ol, jaw: 1.18, chin: 0.34, wide: 1.02, eye: 0.7, eyeY: -0.04, brow: 0.14, browCol: 'hair', noseS: 1.7, noseY: 0.46, mouthY: 0.74 };
+    tuft(g, GD_FAR, R, c, ol, c.hairS);
+    g.fillStyle = c.skinS; g.strokeStyle = c.out; g.lineWidth = ol * 2; g.beginPath(); g.ellipse(0.12 * R, 1.0 * R, 0.6 * R, 0.26 * R, 0, 0, TAU); g.stroke(); g.fill();
+    skull(g, R, c, k);
+    tuft(g, GD_NEAR, R, c, ol, c.hair);
+    if (flat) return;
+    wrinkles(g, R, c, ol, 1.18);
+    features(g, R, c, e, k);
+  }
+  // Ed Wuncler III: buzz cut, do-rag energy, zero consequences
+  function ed3Head(g, R, c, e, rig, flat) {
+    const ol = rig.ol, k = { ol, jaw: 1.14, chin: 0.28, eye: 0.76, eyeY: -0.02, brow: 0.08, noseS: 1.4, noseY: 0.46, mouthY: 0.72 };
+    skull(g, R, c, k);
+    hairCap(g, R, c, ol, c.hair, { boxed: true, line: -0.62, vol: 0 });
+    if (flat) return;
+    features(g, R, c, e, k);
+    g.fillStyle = c.hair; for (let i = 0; i < 6; i++) g.fillRect((-0.2 + i * 0.12) * R, (0.98 + (i % 2) * 0.05) * R, 0.05 * R, 0.05 * R); // chin scruff
+  }
+  // Gin Rummy: receding hairline, goatee, always explaining
+  function rummyHead(g, R, c, e, rig, flat) {
+    const ol = rig.ol, k = { ol, jaw: 1.16, chin: 0.26, wide: 0.96, eye: 0.74, eyeY: -0.02, brow: 0.09, noseS: 1.5, noseY: 0.46, mouthY: 0.72 };
+    skull(g, R, c, k);
+    hairCap(g, R, c, ol, c.hair, { line: -0.82, vol: 0.02, side: -0.2 });
+    if (flat) return;
+    features(g, R, c, e, k);
+    g.strokeStyle = c.hair; g.lineWidth = 0.09 * R; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(-0.1 * R, 0.68 * R); g.quadraticCurveTo(0.16 * R, 0.6 * R, 0.42 * R, 0.68 * R); g.moveTo(-0.1 * R, 0.68 * R); g.quadraticCurveTo(-0.08 * R, 1.06 * R, 0.16 * R, 1.12 * R); g.quadraticCurveTo(0.4 * R, 1.06 * R, 0.42 * R, 0.68 * R); g.stroke(); g.lineCap = 'butt';
+  }
+  // Bushido Brown: the afro, the sideburns, the absolute confidence
+  const BB_AFRO = [[0, -0.7, 1.3, 0.5]].concat(ring(0, -0.7, 1.26, 20, 0.22));
+  function bushidoHead(g, R, c, e, rig, flat) {
+    const ol = rig.ol, hx = rig.hair.x, hy = rig.hair.y, k = { ol, jaw: 1.16, chin: 0.28, eye: 0.78, eyeY: 0, brow: 0.12, noseT: 'wide', noseS: 1.0, mouthY: 0.74 };
+    lobes(g, BB_AFRO, R, hx, hy, c.out, ol); lobes(g, BB_AFRO, R, hx, hy, c.hair, 0);
+    skull(g, R, c, k);
+    lobes(g, [[-0.5, -0.86, 0.4, 0.4], [0, -0.94, 0.44, 0.4], [0.5, -0.88, 0.4, 0.4], [-0.86, -0.3, 0.2, 0.4], [-0.84, 0.1, 0.16, 0.4], [0.84, -0.3, 0.16, 0.4]], R, hx, hy, c.hair, 0);
+    if (flat) return;
+    features(g, R, c, e, k);
+    g.strokeStyle = c.hair; g.lineWidth = 0.1 * R; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(-0.14 * R, 0.7 * R); g.quadraticCurveTo(0.16 * R, 0.6 * R, 0.46 * R, 0.7 * R); g.stroke(); g.lineCap = 'butt';
+  }
+
   /* -------------------------------------------------------------- the cast */
   const big = (k) => (b) => ({ wShoulder: b.wShoulder * k, wWaist: b.wWaist * (k + 0.1), rThigh: b.rThigh * k, rKnee: b.rKnee * k, rShoulder: b.rShoulder * k, rElbow: b.rElbow * k, rWrist: b.rWrist * (k * 0.94), hand: b.hand * 1.1 });
 
@@ -395,7 +443,7 @@
       name: 'Jazmine', full: 'Jazmine DuBois', color: '#e77fa0', voice: 1.7,
       build: 'kid', scale: 0.93, face: { tilt: -0.3, brow: 0.2, mouth: 'smirk' },
       sleeve: 'short', hem: 4, legs: 'bare', sock: 'sock',
-      colors: { skin: '#dcab86', hair: '#dc9a5c', hairHi: '#f3c489', shirt: '#e77fa0', pants: '#6189cc', shoe: '#f5f2ea', sock: '#f5f2ea', eye: EYE, iris: '#3f8a4a' },
+      colors: { skin: '#cfa076', hair: '#b06a34', hairHi: '#dc9a5c', shirt: '#e77fa0', pants: '#6189cc', shoe: '#f5f2ea', sock: '#f5f2ea', eye: EYE, iris: '#3f8a4a' },
       head: jazmineHead,
       skirt(g, J, c, r) {
         const w = r.b.wWaist * 0.5;
@@ -424,7 +472,7 @@
     tom: {
       name: 'Tom', full: 'Tom DuBois', color: '#5a6478', voice: 0.95,
       build: 'adult', face: { tilt: -0.4, brow: 0.3 }, sleeve: 'long', hem: 13, cuff: 'shirt2',
-      colors: { skin: '#b98a62', hair: '#1c1613', shirt: '#3d4352', shirt2: '#f2f0ea', tie: '#a3262b', pants: '#3d4352', shoe: '#191919', eye: EYE, iris: '#6a3d1c' },
+      colors: { skin: '#8f623f', hair: '#1c1613', shirt: '#26272e', shirt2: '#f2f0ea', tie: '#2f4f9a', pants: '#26272e', shoe: '#191919', eye: EYE, iris: '#6a3d1c' },
       head: tomHead,
       outfit(g, L, ws, ww, hem, c) { suitFront(g, L, ws, c, 'tie'); },
     },
@@ -441,11 +489,21 @@
     },
     ruckus: {
       name: 'Uncle Ruckus', full: 'Uncle Ruckus (no relation)', color: '#c98a2b', voice: 0.62,
-      build: 'adult', scale: 0.98, belly: 16, hem: 6, sleeve: 'long', sleeveCol: 'shirt2', face: { tilt: -0.1, mouth: 'grin' }, stoop: 0.04,
-      dims: big(1.36),
-      colors: { skin: '#4d3125', hair: '#8f8a82', shirt: '#f0ede5', shirt2: '#f0ede5', vest: '#b52b2b', tie: '#17171b', pants: '#23232b', shoe: '#161616', eye: EYE, iris: '#6a3d1c' },
+      build: 'adult', scale: 0.98, belly: 24, hem: 8, sleeve: 'long', sleeveCol: 'shirt2', face: { tilt: -0.1, mouth: 'grin' }, stoop: 0.04,
+      dims: big(1.42),
+      colors: (v) => (v
+        ? { skin: '#4d3125', hair: '#8f8a82', shirt: '#f0ede5', shirt2: '#f0ede5', vest: '#b52b2b', tie: '#17171b', pants: '#23232b', shoe: '#161616', eye: EYE, iris: '#6a3d1c' }
+        : { skin: '#4d3125', hair: '#8f8a82', shirt: '#a8707a', shirt2: '#a8707a', tee: '#f0ede5', vest: '#b52b2b', tie: '#17171b', pants: '#8a8474', shoe: '#2a221c', eye: EYE, iris: '#6a3d1c' }),
       head: ruckusHead,
-      outfit(g, L, ws, ww, hem, c) {
+      outfit(g, L, ws, ww, hem, c, r) {
+        if (!r.variant) { // everyday Ruckus: dusty-rose work shirt hanging open over a white undershirt
+          g.fillStyle = c.tee;
+          g.beginPath(); g.moveTo(ws * 0.0, -L - 6); g.lineTo(ws * 0.9, -L - 6); g.lineTo(ws * 1.5, hem + 6); g.lineTo(ws * 0.1, hem + 6); g.closePath(); g.fill();
+          g.strokeStyle = c.shirtS; g.lineWidth = 2.4;
+          g.beginPath(); g.moveTo(ws * 0.0, -L - 2); g.lineTo(ws * 0.1, hem + 6); g.stroke();
+          g.fillStyle = c.teeS; g.beginPath(); g.ellipse(ws * 0.8, -L * 0.2, ws * 0.5, L * 0.16, 0, 0, TAU); g.fill();
+          return;
+        }
         vestFront(g, L, ws, ww, c, 'vest');
         g.fillStyle = c.tie; // bow tie
         g.beginPath(); g.moveTo(ws * 0.24, -L - 1); g.lineTo(ws * 0.46, -L + 4); g.lineTo(ws * 0.24, -L + 9); g.closePath(); g.fill();
@@ -493,6 +551,45 @@
         g.beginPath(); g.moveTo(ws * 0.2, -L - 2); g.quadraticCurveTo(ws * 0.46, -L * 0.52, ws * 0.76, -L - 1); g.stroke();
         g.fillStyle = c.gold; circ(g, ws * 0.47, -L * 0.66, 3); g.fill();
         g.fillStyle = c.shirt2; g.fillRect(-ws * 0.3, -L * 0.74, 7, 4); // pocket square
+      },
+    },
+    wuncler: {
+      name: 'Ed Wuncler', full: 'Ed Wuncler Sr.', color: '#2f4a7a', voice: 0.7,
+      build: 'adult', scale: 1.0, belly: 14, sleeve: 'long', hem: 13, cuff: 'shirt2', face: { lid: 0.3, brow: 0.2, mouth: 'smirk' },
+      dims: big(1.2),
+      colors: { skin: '#eab99c', hair: '#e6e2d8', shirt: '#2a3550', shirt2: '#f2f0ea', tie: '#b3262d', pants: '#2a3550', shoe: '#141416', eye: EYE, iris: '#3a6fa0' },
+      head: wunclerHead,
+      outfit(g, L, ws, ww, hem, c) { suitFront(g, L, ws, c, 'tie'); },
+    },
+    ed3: {
+      name: 'Ed Wuncler III', full: 'Ed Wuncler III', color: '#5a6b3a', voice: 0.9,
+      build: 'adult', scale: 1.0, sleeve: 'long', hem: 12, face: { lid: 0.3, brow: 0.1, mouth: 'smirk' },
+      colors: { skin: '#eac4a8', hair: '#c9a85a', shirt: '#5a6b3a', shirt2: '#f0ede5', gold: '#f2d15a', pants: '#3b3f46', shoe: '#c9a468', eye: EYE, iris: '#3a6fa0' },
+      head: ed3Head,
+      outfit(g, L, ws, ww, hem, c) { // army jacket over a white tee, chain
+        g.fillStyle = c.shirt2; g.beginPath(); g.moveTo(ws * 0.1, -L - 6); g.lineTo(ws * 0.86, -L - 6); g.lineTo(ws * 0.7, hem + 4); g.lineTo(ws * 0.3, hem + 4); g.closePath(); g.fill();
+        g.strokeStyle = c.gold; g.lineWidth = 2; g.beginPath(); g.moveTo(ws * 0.2, -L - 2); g.quadraticCurveTo(ws * 0.48, -L * 0.5, ws * 0.78, -L - 1); g.stroke();
+      },
+    },
+    rummy: {
+      name: 'Gin Rummy', full: 'Gin Rummy', color: '#5a4a6a', voice: 0.8,
+      build: 'adult', scale: 1.02, sleeve: 'long', hem: 12, face: { lid: 0.24, tilt: 0.2, brow: 0.1 },
+      colors: { skin: '#e6bfa2', hair: '#5a4030', shirt: '#3a3440', shirt2: '#1c1a20', pants: '#2a2830', shoe: '#141416', eye: EYE, iris: '#4a6a3a' },
+      head: rummyHead,
+      outfit(g, L, ws, ww, hem, c) { // blazer over a black turtleneck
+        g.fillStyle = c.shirt2; g.beginPath(); g.moveTo(ws * 0.1, -L - 6); g.lineTo(ws * 0.86, -L - 6); g.lineTo(ws * 0.52, -L * 0.3); g.closePath(); g.fill();
+        g.strokeStyle = c.shirtS; g.lineWidth = 1.6; g.beginPath(); g.moveTo(ws * 0.52, -L * 0.3); g.lineTo(ws * 0.5, 16); g.stroke();
+      },
+    },
+    bushido: {
+      name: 'Bushido Brown', full: 'Bushido Brown', color: '#d8a81e', voice: 0.75,
+      build: 'adult', scale: 1.02, idle: 'stance', sleeve: 'long', hem: 12, flare: 2, face: { lid: 0.3, tilt: 0.4, mouth: 'smirk' },
+      colors: { skin: '#7a4f33', hair: '#1a1310', shirt: '#e2b52a', shirt2: '#1c1a20', pants: '#e2b52a', shoe: '#1c1a20', eye: EYE, iris: '#4a2416' },
+      head: bushidoHead,
+      outfit(g, L, ws, ww, hem, c) { // yellow gi, black trim and belt
+        g.strokeStyle = c.shirt2; g.lineWidth = 4;
+        g.beginPath(); g.moveTo(ws * 0.9, -L - 2); g.lineTo(ws * 0.1, -L * 0.42); g.moveTo(ws * 0.04, -L - 2); g.lineTo(ws * 0.5, -L * 0.62); g.stroke();
+        g.fillStyle = c.shirt2; g.fillRect(-ws - 8, -L * 0.24, ws * 2 + 30, 7);
       },
     },
     guest: {

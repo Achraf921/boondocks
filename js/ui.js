@@ -30,7 +30,7 @@
       this.t += rdt; this.st.t += rdt;
       cam.set(900, 0, 1);
       for (const c of this.cast) c.r.update(rdt, 0, 0);
-      if (this.t > 0.5 && In.take('confirm')) { A().init(); A().sfx('ui_select'); BD.setScene(S.board); }
+      if (this.t > 0.5 && In.take('confirm')) { A().init(); A().sfx('ui_select'); BD.setScene(S.mission, BD.HUB); }
     },
     render(g) {
       const ps = BD.pixelScale;
@@ -116,14 +116,14 @@
       if (In.take('confirm')) {
         if (unlocked(cur)) { A().sfx('ui_select'); BD.setScene(S.mission, cur); }
         else A().sfx('ui_locked');
-      } else if (In.take('cancel')) { A().sfx('ui_back'); BD.setScene(S.title); }
+      } else if (In.take('cancel') || In.take('map')) { A().sfx('ui_back'); BD.setScene(S.mission, BD.HUB); }
     },
     render(g) {
       const M = BD.MISSIONS;
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.drawImage(cork, 0, 0);
       T.draw(g, 'HUEY\'S BOARD', 10, 3, { color: '#f2df7a' });
-      T.draw(g, 'ARROWS PICK   ENTER START   ESC TITLE', FW - 10, 3, { color: '#b99a72', align: 'right' });
+      T.draw(g, 'ARROWS PICK   ENTER START   ESC STREET', FW - 10, 3, { color: '#b99a72', align: 'right' });
       for (const m of M) for (const n of m.needs) { // the red string
         const a = M.find((x) => x.id === n), on = unlocked(m);
         line(g, a.x, a.y - 27, m.x, m.y - 27, on ? '#5a0f14' : '#6a5238', !on);
@@ -165,25 +165,35 @@
   };
 
   /* --------------------------------------------------------------- mission */
-  const PAUSE = ['RESUME', 'RESTART EPISODE', 'BACK TO THE BOARD'];
-  const HELP = ['A/D or ARROWS  move', 'SPACE / W      jump', 'J              strike (x3 combo)', 'K              kick   (S+K launcher)', 'L              guard / tap to parry', 'SHIFT          dash through attacks', 'F              Clarity (full meter)', 'S              crouch / hide'];
+  const HELP = ['A/D or ARROWS  move', 'SPACE / W      jump', 'J              strike (x3 combo)', 'K              kick   (S+K launcher)', 'L              guard / tap to parry', 'SHIFT          dash through attacks', 'F              Clarity (full meter)', 'S              crouch / hide', 'E              talk / use', 'TAB            case board'];
   S.mission = {
     enter(m) { this.m = m; this.w = new BD.World(m); this.paused = false; this.psel = 0; },
-    exit() { BD.timeScale = 1; BD.hitstop = 0; A().muffle(false); BD.FX.clear(); },
+    exit() { BD.timeScale = 1; BD.hitstop = 0; A().muffle(false); if (A().shush) A().shush(); BD.FX.clear(); },
+    menu() {
+      const m = this.m, voices = A().voices !== false;
+      return [
+        ['RESUME', () => {}],
+        ['SPOKEN VOICES: ' + (voices ? 'ON' : 'OFF'), () => { if (A().setVoices) A().setVoices(!voices); BD.Save.data.opts.voices = !voices; BD.Save.write(); return true; }],
+        m.hub ? ['OPEN THE CASE BOARD', () => BD.setScene(S.board, null)] : ['RESTART EPISODE', () => BD.setScene(S.mission, m)],
+        m.hub ? ['BACK TO THE TITLE', () => BD.setScene(S.title)] : ['BACK TO THE STREET', () => BD.setScene(S.mission, BD.HUB)],
+      ];
+    },
     update(dt, rdt) {
       const w = this.w;
       if (this.paused) {
-        if (In.take('up')) { this.psel = (this.psel + 2) % 3; A().sfx('ui_move'); }
-        if (In.take('down')) { this.psel = (this.psel + 1) % 3; A().sfx('ui_move'); }
+        const opts = this.menu();
+        if (In.take('up')) { this.psel = (this.psel + opts.length - 1) % opts.length; A().sfx('ui_move'); }
+        if (In.take('down')) { this.psel = (this.psel + 1) % opts.length; A().sfx('ui_move'); }
         if (In.take('pause') || In.take('cancel')) { this.paused = false; A().muffle(false); return; }
         if (In.take('confirm')) {
-          A().sfx('ui_select'); A().muffle(false); this.paused = false;
-          if (this.psel === 1) BD.setScene(S.mission, this.m);
-          else if (this.psel === 2) BD.setScene(S.board, this.m);
+          A().sfx('ui_select');
+          if (opts[this.psel][1]() === true) return;      // toggles keep the menu open
+          A().muffle(false); this.paused = false;
         }
         return;
       }
       if (!w.cineOn && !w.card && !w.over && In.take('pause')) { this.paused = true; this.psel = 0; A().muffle(true); A().sfx('ui_back'); In.clear(); return; }
+      if (this.m.hub && !w.cineOn && In.take('map')) { A().sfx('paper'); BD.hubX = w.player.x; BD.setScene(S.board, null); return; }
       w.update(dt, rdt);
       if (w.done) BD.setScene(S.results, { m: this.m, stats: w.stats });
     },
@@ -194,9 +204,9 @@
       g.fillStyle = 'rgba(8,6,14,0.8)'; g.fillRect(0, 0, FW, FH);
       const b = T.banner('PAUSED', 4, '#fff3d6', '#ffb21e', '#1a0d10', 0.2);
       g.drawImage(b, Math.round((FW - b.width) / 2), 22);
-      PAUSE.forEach((s, i) => { const on = i === this.psel; T.draw(g, (on ? '▶ ' : '  ') + s, 70, 78 + i * 14, { color: on ? '#ffe36e' : '#d9d0c0', outline: '#07060a' }); });
-      Px.panel(g, 232, 70, 236, 100, '#15121c', '#07060a', '#b3262d');
-      HELP.forEach((s, i) => T.draw(g, s, 240, 78 + i * 11, { color: '#d9d0c0' }));
+      this.menu().forEach((o, i) => { const on = i === this.psel; T.draw(g, (on ? '▶ ' : '  ') + o[0], 40, 78 + i * 14, { color: on ? '#ffe36e' : '#d9d0c0', outline: '#07060a' }); });
+      Px.panel(g, 232, 66, 236, 122, '#15121c', '#07060a', '#b3262d');
+      HELP.forEach((s2, i) => T.draw(g, s2, 240, 74 + i * 11, { color: '#d9d0c0' }));
     },
   };
 
@@ -205,7 +215,7 @@
     S: 'That was pimpin\' at a PROFESSIONAL level. And I would know. I am A Pimp Named Slickback.',
     A: 'Clean work, lil\' man. A Pimp Named Slickback has seen worse. A Pimp Named Slickback has DONE worse.',
     B: 'It\'s like I always say: a bruise is just a receipt for a lesson. That\'ll be fifty dollars.',
-    C: 'You got hit so much I felt it in MY hat. And it\'s "A Pimp Named Slickback". Like "A Tribe Called Quest". You say the whole thing.',
+    C: 'You got hit so much I felt it in MY hat. And it\'s "A Pimp Named Slickback". All four words. You say the whole thing.',
   };
   S.results = {
     enter(o) {
@@ -227,7 +237,7 @@
       const n = Math.min(this.rows.length, ((this.t - 0.5) / 0.3) | 0);
       if (n > this.shown) { this.shown = n; A().sfx('type'); }
       if (this.t > 2.3 && !this.stamped) { this.stamped = true; A().sfx('stamp'); cam.shake(0.5); if (this.fresh.length) A().sting('unlock'); }
-      if (this.t > 2.8 && In.take('confirm')) { A().sfx('ui_select'); BD.setScene(S.board, this.m); }
+      if (this.t > 2.8 && In.take('confirm')) { A().sfx('ui_select'); BD.setScene(S.mission, BD.HUB); }
     },
     render(g) {
       g.setTransform(1, 0, 0, 1, 0, 0);
@@ -259,7 +269,7 @@
       if (this.t > 2.4) { const n = ((this.t - 2.4) * 40) | 0; let c = 0; this.quip.forEach((l, i) => { const s = l.slice(0, Math.max(0, n - c)); c += l.length + 1; T.draw(g, s, 332, 70 + i * 10, { color: '#f4ecdc' }); }); }
       if (this.t > 2.8) {
         this.fresh.forEach((m, i) => T.draw(g, 'NEW CASE FILE: ' + m.title, 14, 184 + i * 11, { color: '#ffe36e', outline: '#07060a' }));
-        if (blink(2.2)) T.draw(g, 'ENTER: BACK TO THE BOARD', FW - 14, 252, { color: '#ffe36e', align: 'right', outline: '#07060a' });
+        if (blink(2.2)) T.draw(g, 'ENTER: BACK TO THE STREET', FW - 14, 252, { color: '#ffe36e', align: 'right', outline: '#07060a' });
       }
     },
   };
@@ -269,11 +279,12 @@
     BD.boot();
     const q = new URLSearchParams(location.search), o = BD.Save.data.opts;
     A().setVolumes(o.music, o.sfx);
+    if (o.voices === false && A().setVoices) A().setVoices(false);
     BD.onFirstGesture = () => A().init();
     if (q.get('unlock')) BD.cheat = true;
     if (q.get('reset')) BD.Save.reset();
     const m = q.get('m') && BD.MISSIONS.find((x) => x.id === q.get('m'));
     if (m) { BD.cheat = true; BD.setScene(S.mission, m); }
-    else BD.setScene(q.get('board') ? S.board : S.title);
+    else BD.setScene(q.get('board') ? S.board : q.get('hub') ? (BD.hubSeen = true, S.mission) : S.title, q.get('hub') ? BD.HUB : undefined);
   };
 })();

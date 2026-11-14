@@ -232,6 +232,15 @@
     }
   }
 
+  /* shared library for the episode files in js/episodes/ */
+  BD.Lib = { E, bark, sub, near, lob, fireAt, waves, leap, grunt, shooter, guardAI, stinkAI, managerAI, rileyAI, relocate, tomAI, ghostStep, caneRain, crabAI, gripeAI, pistAI, patrol, CREW,
+    PUNCH, MALLET, CORK, SHOVE, SLAM };
+  /** an episode file replaces the built-in mission with the same id (board position and unlock rules carry over) */
+  BD.episode = (def) => {
+    const i = BD.MISSIONS.findIndex((m) => m.id === def.id);
+    if (i < 0) BD.MISSIONS.push(def); else BD.MISSIONS[i] = Object.assign({}, BD.MISSIONS[i], def);
+  };
+
   /* ============================================================ missions */
   const M = (BD.MISSIONS = []);
 

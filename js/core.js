@@ -84,12 +84,12 @@
     up: ['ArrowUp', 'KeyW'], down: ['ArrowDown', 'KeyS'],
     jump: ['Space', 'ArrowUp', 'KeyW'],
     light: ['KeyJ', 'KeyZ'], heavy: ['KeyK', 'KeyX'], guard: ['KeyL', 'KeyC'],
-    dash: ['ShiftLeft', 'ShiftRight', 'KeyV'], special: ['KeyF', 'KeyE'],
+    dash: ['ShiftLeft', 'ShiftRight', 'KeyV'], special: ['KeyF', 'KeyQ'], talk: ['Enter', 'KeyE'], map: ['Tab', 'KeyM'],
     confirm: ['Enter', 'Space', 'KeyJ', 'KeyZ'], cancel: ['Escape', 'Backspace'],
     pause: ['Escape', 'KeyP'],
   };
   // standard gamepad layout
-  const PAD = { jump: [0], light: [2], heavy: [3], dash: [1], guard: [5, 7], special: [4, 6], confirm: [0], cancel: [1], pause: [9], left: [14], right: [15], up: [12], down: [13] };
+  const PAD = { jump: [0], light: [2], heavy: [3], dash: [1], guard: [5, 7], special: [4, 6], confirm: [0], cancel: [1], pause: [9], talk: [3], left: [14], right: [15], up: [12], down: [13] };
   const byCode = {};
   for (const a in MAP) for (const c of MAP[a]) (byCode[c] = byCode[c] || []).push(a);
 

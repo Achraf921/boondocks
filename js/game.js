@@ -5,6 +5,7 @@
   const A = () => BD.Audio;
   const G = 2400, RUN = 340, JUMP = 1040, DASH_V = 980, DASH_T = 0.2, PARRY = 0.17;
   const FW = BD.FBW, FH = BD.FBH;
+  const QKEYS = ['light', 'heavy', 'guard', 'jump', 'dash'], QNAME = { light: 'J', heavy: 'K', guard: 'L', jump: 'SPACE', dash: 'SHIFT' };
 
   /* ------------------------------------------------------------ Huey's moves */
   // reach: world units in front of the body; h: [top, bottom] relative to the feet (up is negative)
@@ -53,6 +54,7 @@
       this.set('atk'); this.atk = a; this.done.length = 0; this.struck = false; this.connected = false; this.queue = null;
       this.rig.setPose(a.poses[0], a.windRate || 30);
       if (a.armor) this.armor = true;
+      if (A().voice && a.dmg && (this.team === 'hero' ? a.heavy || a.down : this.boss)) A().voice(this.id, 'effort');
       if (a.tell) { // enemy telegraph: a glint + a sound so you can react
         FX.stars.push({ x: this.x + this.face * 10, y: this.y - this.hh - 26, life: 0.16, max: 0.16, size: a.unblock ? 7 : 5 });
         A().sfx(a.unblock ? 'alert' : 'detect', { vol: 0.6, pitch: a.unblock ? 1 : 1.5 });
@@ -93,8 +95,10 @@
         if (!this.drive) this.vx = U.damp(this.vx, 0, this.state === 'launch' || this.state === 'down' ? 5 : 13, dt);
       }
       this.drive = false;
-      if (this.x < w.minX) { this.x = w.minX; if (this.state === 'launch') this.vx *= -0.4; }
-      if (this.x > w.maxX) { this.x = w.maxX; if (this.state === 'launch') this.vx *= -0.4; }
+      if (this.team !== 'npc') { // story characters may walk off-screen; fighters stay in the arena
+        if (this.x < w.minX) { this.x = w.minX; if (this.state === 'launch') this.vx *= -0.4; }
+        if (this.x > w.maxX) { this.x = w.maxX; if (this.state === 'launch') this.vx *= -0.4; }
+      }
     }
     update(dt) {
       this.st += dt;
@@ -198,7 +202,7 @@
   /* ------------------------------------------------------ player controls */
   function control(f, dt) {
     const w = f.w;
-    if (w.cineOn || f.dead || f.state === 'act' || w.over) return;
+    if (w.cineOn || w.lock || f.dead || f.state === 'act' || w.over) return;
     const ax = In.axisX(), s = f.state, fight = !w.noFight;
     if (s === 'atk') {
       const a = f.atk;
@@ -264,6 +268,7 @@
       this.combo = 0; this.comboT = 0; this.hpGhost = 1; this.bossGhost = 1; this.over = null; this.overT = 0;
       this.ghostT = 0; this.slash = null; this.phase = 0; this.beams = []; this.alert = 0; this.done = false;
       this.dustCol = '#d9cfbb'; this.rimDir = -1; this.marks = [];
+      this.obj = null; this.objN = 0; this.mark = null; this.items = []; this.bubbles = []; this.pick = null; this.qteS = null; this.clock = null; this.lock = false; this.failMsg = null; this.noHud = !!def.hub; this.flags = {}; this.pins = [];
       this.setBg(def.bg);
       this.player = new Fighter(this, 'huey', 200, { team: 'hero', hp: 100 });
       this.fighters.push(this.player);
@@ -271,6 +276,7 @@
       this.co = new BD.Co(this.run(0, true));
     }
     setBg(name, st) {
+      if (!BD.Backgrounds[name]) { console.warn('missing backdrop "' + name + '", using the street'); name = 'street'; }
       this.bgName = name; this.bg = BD.Backgrounds[name]; this.bg.init();
       if (st) Object.assign(this.st, st);
       this.minX = 40; this.maxX = this.bg.width - 40;
@@ -285,7 +291,7 @@
     *run(from, first) {
       const d = this.def;
       if (first) {
-        yield* this.titleCard();
+        if (!d.noCard) yield* this.titleCard();
         if (d.intro) { this.cine(true); yield* d.intro(this); this.cine(false); }
       }
       for (this.phase = from; this.phase < d.phases.length; this.phase++) yield* d.phases[this.phase](this);
@@ -299,6 +305,7 @@
       for (const f of this.fighters) if (f !== this.player) f.gone = true;
       this.fighters = [this.player]; this.shots.length = 0; this.subs.length = 0; this.tokens.length = 0;
       this.boss = null; this.over = null; this.dlg = null; this.banner = null; this.beams.length = 0; this.alert = 0; this.marks.length = 0;
+      this.obj = null; this.objN = 0; this.mark = null; this.items = []; this.bubbles = []; this.pick = null; this.qteS = null; this.clock = null; this.lock = false; this.failMsg = null; this.overlay = null;
       const p = this.player; p.hp = p.max; p.dead = false; p.set('idle'); p.inv = 1; p.alpha = 1; p.vx = p.vy = 0; p.y = 0; p.focus = Math.min(p.focus, 50);
       BD.timeScale = 1; FX.clear(); this.fade = 1; this.fadeTo = 0; this.cineOn = false; this.camLock = null; this.noFight = false;
       this.co = new BD.Co(this.run(this.phase, false));
@@ -326,19 +333,21 @@
       const d = (this.dlg = { who, text, n: 0, expr: expr || null, lines: T.wrap(text, who ? 56 : 66), opts: opts || {}, t: 0 });
       const voice = who ? BD.CAST[who].voice : 1.1;
       let blip = 0;
+      const spoken = A().speak ? A().speak(who || 'huey', text, false, !who) : false;
       In.take('confirm', 1);
       yield (dt) => {
         d.t += dt;
         if (d.n < text.length) {
           const ch = text[d.n | 0];
           d.n = Math.min(text.length, d.n + dt * (ch === ',' || ch === '.' || ch === '!' || ch === '?' ? 14 : 46));
-          blip -= dt; if (blip <= 0 && ch !== ' ') { blip = 0.05; A().blip(voice); }
+          blip -= dt; if (blip <= 0 && ch !== ' ' && !spoken) { blip = 0.05; A().blip(voice); }
           if (In.take('confirm')) d.n = text.length;
           return false;
         }
         return this.skip || In.take('confirm');
       };
       A().sfx('ui_move', { vol: 0.4 });
+      if (A().shush) A().shush();
       this.dlg = null;
     }
     *narr(text) { yield* this.say(null, text); }
@@ -384,6 +393,146 @@
       yield 0.9;
       this.fighting = false; this.boss = null;
     }
+    /* ------------------------------------------- errands & story beats */
+    /* Everything here auto-completes when BD.AUTOPLAY is set (headless tests). */
+    objective(s) { this.obj = s || null; this.objN = 0; }
+    /** speech bubble over a character; the action keeps going */
+    bubble(f, text, dur) {
+      this.bubbles = this.bubbles.filter((b) => b.f !== f);
+      this.bubbles.push({ f, lines: T.wrap(text, 26), t: dur || Math.max(2.2, text.length * 0.07) });
+      if (A().speak) A().speak(f.id, text, true);
+    }
+    /** objective: walk to a spot. o: { r: radius, y: platform height } */
+    *goTo(x, label, o) {
+      o = o || {};
+      const p = this.player;
+      this.objective(label); this.mark = { x, y: (o.y || 0) - 40 };
+      if (BD.AUTOPLAY) { p.x = x; p.y = o.y || 0; p.vy = 0; }
+      yield () => Math.abs(p.x - x) < (o.r || 70) && (o.y === undefined || Math.abs(p.y - o.y) < 50);
+      this.mark = null; this.objective(null); A().sfx('ui_select', { vol: 0.5 });
+    }
+    /** objective: walk up to a character (or an x position) and press the talk key (E / Enter) */
+    *interact(target, label, prompt) {
+      const isX = typeof target === 'number', tx = () => (isX ? target : target.x), p = this.player;
+      this.objective(label);
+      In.take('talk', 1);
+      yield () => {
+        if (BD.AUTOPLAY) { p.x = tx() - 70; p.y = 0; }
+        const near = Math.abs(p.x - tx()) < 120 && p.onG && !this.dlg;
+        this.mark = { x: tx(), y: isX ? -40 : target.y - target.hh - 34, prompt: near ? prompt || 'TALK' : null };
+        return near && (BD.AUTOPLAY || In.take('talk'));
+      };
+      this.mark = null; this.objective(null); A().sfx('ui_select', { vol: 0.5 });
+      if (!isX) { p.face = target.x >= p.x ? 1 : -1; target.face = -p.face; }
+    }
+    /** interact with an npc, then run a dialogue generator as a little cutscene */
+    *talk(npc, label, gen) {
+      yield* this.interact(npc, label);
+      this.cine(true); this.look((npc.x + this.player.x) / 2, 1.5);
+      yield* gen;
+      this.cine(false);
+    }
+    /** objective: pick things up by walking into them. items: [{ x, y, name, col, on(item) }] */
+    *collect(items, label) {
+      const p = this.player;
+      this.objective(label);
+      this.items = items.map((i) => Object.assign({ y: 0, col: '#ffe36e', got: false }, i));
+      yield () => {
+        let left = 0;
+        for (const it of this.items) {
+          if (it.got) continue;
+          if (BD.AUTOPLAY || (Math.abs(p.x - it.x) < 48 && Math.abs(p.y - it.y) < 100)) {
+            it.got = true; A().sfx('unlock') || A().sfx('ui_select'); FX.ring(it.x, it.y - 40, it.col, 50); FX.text(it.x, it.y - 80, it.name || 'GOT IT', it.col);
+            if (it.on) it.on(it);
+          } else left++;
+        }
+        this.objN = left;
+        return left === 0;
+      };
+      this.items = []; this.objective(null);
+    }
+    /** dialogue choice menu; returns the index picked */
+    *choice(who, prompt, options) {
+      if (BD.AUTOPLAY || this.skip) return 0;
+      const c = (this.pick = { who, prompt, options, sel: 0 });
+      In.clear();
+      yield () => {
+        if (In.take('up')) { c.sel = (c.sel + options.length - 1) % options.length; A().sfx('ui_move'); }
+        if (In.take('down')) { c.sel = (c.sel + 1) % options.length; A().sfx('ui_move'); }
+        return In.take('confirm') || In.take('talk');
+      };
+      this.pick = null; A().sfx('ui_select');
+      return c.sel;
+    }
+    /** timed button prompts. keys: 'light' | 'heavy' | 'guard' | 'jump' | 'dash'. o: { window, gap, onHit(k,i), onMiss(k,i) }. returns hits */
+    *qte(keys, o) {
+      o = o || {};
+      let hits = 0;
+      this.lock = true;
+      for (let i = 0; i < keys.length; i++) {
+        const k = keys[i], q = (this.qteS = { key: k, t: 0, win: o.window || 0.9, res: null });
+        In.clear();
+        yield () => {
+          q.t += this.rdt;
+          if (BD.AUTOPLAY) { q.res = 'hit'; return true; }
+          for (const a of QKEYS) if (In.take(a)) { q.res = a === k ? 'hit' : 'miss'; return true; }
+          if (q.t > q.win) { q.res = 'miss'; return true; }
+          return false;
+        };
+        if (q.res === 'hit') { hits++; A().sfx('parry', { vol: 0.6 }); if (o.onHit) o.onHit(k, i); }
+        else { A().sfx('ui_locked'); if (o.onMiss) o.onMiss(k, i); }
+        yield o.gap === undefined ? 0.4 : o.gap;
+      }
+      this.qteS = null; this.lock = false;
+      return hits;
+    }
+    /** countdown on the HUD. true if cond() became true in time */
+    *timed(seconds, cond) {
+      if (BD.AUTOPLAY) return true;
+      let ok = false;
+      this.clock = seconds;
+      yield () => { this.clock -= this.dt; if (cond()) { ok = true; return true; } return this.clock <= 0; };
+      this.clock = null;
+      return ok;
+    }
+    /** fail this step: shows the reason; the player restarts the current phase */
+    *fail(reason) {
+      if (BD.AUTOPLAY) return;
+      this.failMsg = reason; this.over = 'dead'; this.overT = 0; A().sting('defeat');
+      yield () => false;
+    }
+    /** npc tags along behind the player. returns the coroutine; call .stop() on it to end */
+    follow(npc, gap) {
+      gap = gap || 120;
+      const w = this, co = new BD.Co((function* () {
+        for (;;) {
+          const d = w.player.x - npc.x;
+          if (Math.abs(d) > gap && !w.cineOn) {
+            npc.face = d > 0 ? 1 : -1; npc.x += npc.face * Math.min(Math.abs(d) - gap, (Math.abs(d) > gap + 200 ? 420 : 300) * w.dt);
+            npc.state = 'act'; npc.rig.setCycle(Math.abs(d) > gap + 160 ? 'run' : 'walk', 9);
+          } else if (npc.rig.cycle) npc.rig.setPose(npc.idlePose, 10);
+          yield;
+        }
+      })());
+      this.subs.push(co);
+      return co;
+    }
+    /** an npc mutters lines in speech bubbles whenever the player is nearby */
+    chatter(npc, lines, radius) {
+      const w = this;
+      let i = 0;
+      const co = new BD.Co((function* () {
+        for (;;) {
+          yield U.rand(3.5, 6.5);
+          if (!npc.gone && !w.cineOn && !w.dlg && Math.abs(w.player.x - npc.x) < (radius || 320)) w.bubble(npc, lines[i++ % lines.length]);
+        }
+      })());
+      this.subs.push(co);
+      return co;
+    }
+    /** run extra script alongside the main one */
+    also(gen) { const co = new BD.Co(gen); this.subs.push(co); return co; }
+
     token(f) { if (this.tokens.indexOf(f) >= 0) return true; if (this.tokens.length >= 2) return false; this.tokens.push(f); return true; }
     untoken(f) { const i = this.tokens.indexOf(f); if (i >= 0) this.tokens.splice(i, 1); }
 
@@ -420,6 +569,7 @@
       const dmg = a.dmg * (hero ? this.def.hurt || 1 : 1);
       t.hp -= dmg; t.flash = 0.09;
       const pow = Math.min(1.2, a.dmg / 12);
+      if (A().voice) A().voice(t.id, t.hp <= 0 ? 'ko' : 'hurt');
       BD.hitstop = Math.max(BD.hitstop, a.stop || 0.05);
       cam.shake(0.14 + pow * 0.3); cam.punch(dir * (3 + pow * 5), 0);
       FX.hit(hx, hy, pow, dir, a.col);
@@ -542,6 +692,7 @@
       this.hpGhost = Math.max(p.hp / p.max, this.hpGhost - rdt * 0.35);
       if (this.boss) this.bossGhost = Math.max(this.boss.hp / this.boss.max, this.bossGhost - rdt * 0.35);
       if (this.toastT > 0) this.toastT -= rdt;
+      for (let i = this.bubbles.length - 1; i >= 0; i--) { const b = this.bubbles[i]; b.t -= rdt; if (b.t <= 0 || b.f.gone) this.bubbles.splice(i, 1); }
       for (let i = this.marks.length - 1; i >= 0; i--) { this.marks[i].t -= dt; if (this.marks[i].t <= 0) this.marks.splice(i, 1); }
       if (this.banner) { this.banner.t += rdt; if (this.banner.t > this.banner.life) this.banner = null; }
       if (this.card) this.card.t += rdt;
@@ -603,11 +754,40 @@
         const q = cam.toScreen(m.x, 0), x = (q[0] * ps) | 0, y = (q[1] * ps) | 0;
         if (((BD.time * 14) | 0) % 2) { g.fillStyle = m.col || '#b6ff8a'; g.fillRect(x - 6, y, 12, 2); g.fillRect(x - 1, y - 5, 2, 4); }
       }
+      for (const pn of this.pins) { // case markers on the street
+        const q = cam.toScreen(pn.x, -210 + Math.sin(BD.time * 3 + pn.x) * 8), x = (q[0] * ps) | 0, y = (q[1] * ps) | 0;
+        if (x < -20 || x > FW + 20) continue;
+        g.fillStyle = '#14101a'; for (let i = 0; i <= 9; i++) g.fillRect(x - 9 + i - 1, y - i - 1, (9 - i) * 2 + 2, i * 2 + 2);
+        g.fillStyle = pn.done ? '#5fd07a' : '#ffe36e'; for (let i = 0; i <= 8; i++) g.fillRect(x - 8 + i, y - i, (8 - i) * 2, i * 2);
+        T.draw(g, pn.label, x, y - 3, { align: 'center', color: '#14101a' });
+        g.fillStyle = pn.done ? '#5fd07a' : '#ffe36e'; g.fillRect(x - 1, y + 12, 2, 10);
+      }
+      for (const it of this.items) if (!it.got) { // pickups
+        const q = cam.toScreen(it.x, it.y - 44 + Math.sin(BD.time * 5 + it.x) * 6), x = (q[0] * ps) | 0, y = (q[1] * ps) | 0;
+        g.fillStyle = '#14101a'; g.fillRect(x - 5, y - 2, 10, 4); g.fillRect(x - 2, y - 5, 4, 10); g.fillRect(x - 4, y - 4, 8, 8);
+        g.fillStyle = it.col; g.fillRect(x - 3, y - 3, 6, 6); g.fillStyle = '#ffffff'; g.fillRect(x - 2, y - 2, 2, 2);
+      }
       FX.drawWorld(g);
       g.setTransform(ps, 0, 0, ps, 0, 0);
       this.bg.drawFront(g, cam, st);
       g.setTransform(1, 0, 0, 1, 0, 0);
       FX.drawScreen(g);
+      if (this.mark && !this.cineOn && !this.over) { // objective marker
+        const q = cam.toScreen(this.mark.x, this.mark.y), x = q[0] * ps, y = Math.max(46, q[1] * ps - 8 + Math.sin(BD.time * 6) * 2);
+        if (x < 8) T.draw(g, '◀', 4, 120, { color: '#ffe36e', outline: '#0d0b10', scale: 2 });
+        else if (x > FW - 8) T.draw(g, '▶', FW - 14, 120, { color: '#ffe36e', outline: '#0d0b10', scale: 2 });
+        else {
+          T.draw(g, '▼', x, y, { align: 'center', color: '#ffe36e', outline: '#0d0b10', scale: 2 });
+          if (this.mark.prompt) T.draw(g, 'E: ' + this.mark.prompt, x, y - 12, { align: 'center', color: '#ffffff', outline: '#0d0b10' });
+        }
+      }
+      for (const b of this.bubbles) if (!this.cineOn || !this.dlg) { // speech bubbles
+        const q = cam.toScreen(b.f.x, b.f.y - b.f.hh - 40), w = Math.max.apply(null, b.lines.map((l) => T.width(l))) + 8, h = b.lines.length * 9 + 5;
+        const x = U.clamp(Math.round(q[0] * ps - w / 2), 2, FW - w - 2), y = Math.max(34, Math.round(q[1] * ps - h));
+        g.fillStyle = '#14101a'; g.fillRect(x - 1, y - 1, w + 2, h + 2); g.fillRect(U.clamp((q[0] * ps) | 0, x + 3, x + w - 5) - 1, y + h, 5, 4);
+        g.fillStyle = '#fbf6ea'; g.fillRect(x, y, w, h); g.fillRect(U.clamp((q[0] * ps) | 0, x + 3, x + w - 5), y + h, 3, 3);
+        b.lines.forEach((l, i) => T.draw(g, l, x + 4, y + 3 + i * 9, { color: '#221a22' }));
+      }
       this.hud(g);
     }
     floorUnder(f) {
@@ -643,7 +823,21 @@
     hud(g) {
       const p = this.player, lb = Math.round(this.letter * 22);
       if (lb > 0) { g.fillStyle = '#07060a'; g.fillRect(0, 0, FW, lb); g.fillRect(0, FH - lb, FW, lb); }
-      if (!this.cineOn && !this.card) {
+      if (!this.cineOn && !this.card && this.obj) {
+        const s = '▶ ' + this.obj + (this.objN ? '  (' + this.objN + ' LEFT)' : '');
+        T.draw(g, s, FW / 2, 35, { align: 'center', color: '#ffe36e', outline: '#0d0b10' });
+      }
+      if (this.clock !== null && !this.cineOn) {
+        const c = Math.max(0, Math.ceil(this.clock));
+        T.draw(g, ((c / 60) | 0) + ':' + ('0' + (c % 60)).slice(-2), FW / 2, 14, { align: 'center', scale: 2, color: c <= 10 ? '#ff4b3a' : '#fff3d6', outline: '#0d0b10' });
+      }
+      if (this.qteS) {
+        const q = this.qteS, nm = QNAME[q.key], w = Math.max(44, T.width(nm, 3) + 16), x = (FW - w) / 2;
+        Px.panel(g, x, 58, w, 40, q.res === 'hit' ? '#2f8a4a' : q.res === 'miss' ? '#8a2a2a' : '#15121c', '#07060a', '#ffe36e');
+        T.draw(g, nm, FW / 2, 64, { align: 'center', scale: 3, color: '#ffffff', shadow: '#07060a' });
+        g.fillStyle = '#ffe36e'; g.fillRect(x + 4, 91, Math.round((w - 8) * Math.max(0, 1 - q.t / q.win)), 3);
+      }
+      if (!this.cineOn && !this.card && !this.noHud) {
         // Huey
         Px.panel(g, 4, 4, 28, 28, '#2a1114', '#0d0b10', '#b3262d');
         g.drawImage(faceTile('huey', 6.5, 22, 22, p.hp < 30 ? 'pain' : null), 7, 7);
@@ -668,7 +862,7 @@
         }
         if (this.toastT > 0 && this.toastS) {
           const w = T.width(this.toastS) + 12, a = this.toastT < 0.3 ? ((BD.time * 30) | 0) % 2 : 1;
-          if (a) { Px.panel(g, (FW - w) / 2, 38, w, 13, '#14101a', '#0d0b10', '#ffe36e'); T.draw(g, this.toastS, FW / 2, 41, { align: 'center', color: '#fff3d6' }); }
+          if (a) { Px.panel(g, (FW - w) / 2, 46, w, 13, '#14101a', '#0d0b10', '#ffe36e'); T.draw(g, this.toastS, FW / 2, 49, { align: 'center', color: '#fff3d6' }); }
         }
         if (this.alert > 0.02) { // stealth detection meter
           const s = cam.toScreen(p.x, p.y - p.hh - 60), x = (s[0] * BD.pixelScale) | 0, y = Math.max(40, (s[1] * BD.pixelScale) | 0);
@@ -682,13 +876,19 @@
         if (b.t < b.life - 0.25 || ((BD.time * 30) | 0) % 2) g.drawImage(img, Math.round((FW - img.width) / 2 + (1 - k) * 120), Math.round(FH * 0.36 - img.height / 2));
       }
       if (this.dlg) this.drawDlg(g);
+      if (this.pick) { // dialogue choice
+        const c = this.pick, h = 22 + c.options.length * 12;
+        Px.panel(g, 60, FH - 30 - h, FW - 120, h, '#15121c', '#07060a', '#ffe36e');
+        T.draw(g, c.prompt, 70, FH - 24 - h, { color: '#ffe36e' });
+        c.options.forEach((o, i) => T.draw(g, (i === c.sel ? '▶ ' : '  ') + o, 70, FH - 10 - h + i * 12, { color: i === c.sel ? '#ffffff' : '#b9b0c4' }));
+      }
       if (this.fade > 0.01) { g.globalAlpha = Math.min(1, this.fade); g.fillStyle = '#07060a'; g.fillRect(0, 0, FW, FH); g.globalAlpha = 1; }
       if (this.card) this.drawCard(g);
       if (this.over === 'dead') {
         g.fillStyle = 'rgba(10,4,6,0.78)'; g.fillRect(0, 0, FW, FH);
-        const img = T.banner('YOU GOT WHOOPED', 4, '#ff6a4a', '#a8141c', '#14060a', 0.2);
+        const img = T.banner(this.failMsg ? 'MISSION FAILED' : 'YOU GOT WHOOPED', 4, '#ff6a4a', '#a8141c', '#14060a', 0.2);
         g.drawImage(img, Math.round((FW - img.width) / 2), 78);
-        const q = this.def.loss || 'Granddad: "Boy, get up off that floor. You embarrassing the family."';
+        const q = this.failMsg || this.def.loss || 'Granddad: "Boy, get up off that floor. You embarrassing the family."';
         T.wrap(q, 60).forEach((l, i) => T.draw(g, l, FW / 2, 132 + i * 10, { align: 'center', color: '#f1e6d2', shadow: '#0d0b10' }));
         if (((BD.time * 2.5) | 0) % 2) T.draw(g, 'ENTER: RUN IT BACK', FW / 2, 176, { align: 'center', color: '#ffe36e', outline: '#0d0b10' });
       }
