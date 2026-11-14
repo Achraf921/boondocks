@@ -1,0 +1,72 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>rig sheet</title>
+<style>body{margin:0;background:#111}canvas{display:block;image-rendering:pixelated;width:1440px;height:810px}</style>
+<canvas id="c" width="480" height="270"></canvas>
+<script src="../js/core.js"></script>
+<script src="../js/pixel.js"></script>
+<script src="../js/rig.js"></script>
+<script src="../js/cast.js"></script>
+<script>
+const q = new URLSearchParams(location.search);
+const view = q.get('view') || 'cast', who = q.get('char') || 'huey', page = +(q.get('page') || 0);
+const cv = document.getElementById('c');
+const g = cv.getContext('2d', { willReadFrequently: true });
+g.imageSmoothingEnabled = false;
+const L = q.get('light');
+const light = L === 'ink' ? { grade: 'ink', ambient: '#000000', amount: 0, rim: null }
+  : L === 'night' ? { ambient: '#1b2a4a', amount: 0.42, rim: '#ffb060', grade: 'none' }
+  : L === 'sunset' ? { ambient: '#ff9a4a', amount: 0.14, rim: '#ffd38a', grade: 'none' } : null;
+const bg = L === 'ink' ? '#efe6d2' : L === 'night' ? '#1a2238' : L === 'sunset' ? '#e08a5a' : '#8a8fa8';
+const rigs = {};
+function rig(id, key) { const k = key || id; if (!rigs[k]) { rigs[k] = new BD.Rig(id); rigs[k].setLight(light); } return rigs[k]; }
+const Z = +(q.get('z') || 0.64);
+let t = 0;
+function frame() {
+  requestAnimationFrame(frame);
+  const dt = 1 / 60; t += dt;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.fillStyle = bg; g.fillRect(0, 0, 480, 270);
+  if (view === 'cast') {
+    const ids = Object.keys(BD.CAST).slice(page * 8, page * 8 + 8);
+    ids.forEach((id, i) => {
+      const r = rig(id); r.update(dt);
+      g.setTransform(Z, 0, 0, Z, 0, 0);
+      r.draw(g, (36 + i * 58) / Z, 200 / Z, 1, {});
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      BD.Text.draw(g, id, 36 + i * 58, 206, { align: 'center', color: '#111' });
+    });
+  } else if (view === 'poses') {
+    const names = Object.keys(BD.POSES).slice(page * 14, page * 14 + 14);
+    names.forEach((n, i) => {
+      const r = rig(who, who + n);
+      if (r.poseName !== n) r.snap(n);
+      r.grounded = !/air|dive|jump|fall|float|launch/i.test(n);
+      r.update(dt);
+      const x = 36 + (i % 7) * 66, y = 118 + Math.floor(i / 7) * 130;
+      g.setTransform(Z, 0, 0, Z, 0, 0);
+      r.draw(g, x / Z, (y - (r.grounded ? 0 : 14)) / Z, 1, {});
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      BD.Text.draw(g, n, x, y + 4, { align: 'center', color: '#111' });
+    });
+  } else if (view === 'cycles') {
+    Object.keys(BD.CYCLES).forEach((n, i) => {
+      const r = rig(who, who + n);
+      r.setCycle(n, n === 'run' ? 13 : 7); r.update(dt, 200, 0);
+      g.setTransform(Z, 0, 0, Z, 0, 0); r.draw(g, (40 + i * 76) / Z, 200 / Z, 1, {});
+    });
+  } else if (view === 'portraits') {
+    const ids = (q.get('ids') || 'huey,riley,granddad,jazmine,tom,tomP,ruckus,stink,stinkInk,manager,crab,gripe,pist,guest,tux,guard').split(',').slice(page * 8, page * 8 + 8);
+    ids.forEach((id, i) => {
+      const x = 60 + (i % 4) * 120, y = 70 + Math.floor(i / 4) * 132;
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.save(); g.beginPath(); g.rect(x - 52, y - 62, 104, 124); g.clip();
+      g.fillStyle = BD.CAST[id].color; g.fillRect(x - 52, y - 62, 104, 124);
+      BD.Portrait.draw(g, id, x - 6, y + 4, +(q.get('r') || 30), 1, q.get('expr') || null, Math.max(0, Math.sin(t * 14 + i)) * (i % 2), dt);
+      g.restore();
+      BD.Text.draw(g, id, x - 50, y + 64, { color: '#fff', shadow: '#000' });
+    });
+  }
+}
+frame();
+</script>
