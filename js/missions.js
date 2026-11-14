@@ -216,7 +216,8 @@
   ];
   const hatePhase = (i) => function* (w) {
     w.setBg('street'); w.music('finale', 0.6); w.place(720, 1);
-    for (let j = i + 1; j < 3; j++) w.npc(CREW[j].id, 1480 + j * 120, { face: -1, prop: 'umbrella', pose: 'hold', z: -1 });
+    w.maxX = 1560;                       // the ones waiting their turn watch from under the far street lamp
+    for (let j = i + 1; j < 3; j++) w.npc(CREW[j].id, 1640 + j * 110, { face: -1, prop: 'umbrella', pose: 'hold', z: -1 });
     const c = CREW[i], b = w.foe(c.id, 1260, Object.assign({ boss: true, ai: c.ai, hp: c.hp }, c.o));
     yield* w.fadeIn(0.3);
     yield* w.duel(b, { banner: c.banner, ko: c.ko });

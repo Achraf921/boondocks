@@ -56,7 +56,7 @@
 
   /* ----------------------------------------------------------------- board */
   const THUMB = { garden: ['garden', 560, { heat: 0.4 }], fight: ['ink', 900, {}], theater: ['lobby', 1700, {}], home: ['house', 640, {}], strikes: ['house', 640, { dark: 1, ghost: 1 }], hate: ['street', 1300, {}] };
-  const SHORT = { garden: 'GARDEN', fight: 'THE FIGHT', theater: 'OR DIE', home: 'HOME ALONE', strikes: 'STRIKES', hate: 'HATEOCRACY' };
+  const SHORT = { garden: 'GARDEN', fight: 'FIGHT', theater: 'OR DIE', home: 'HOME', strikes: 'STRIKE', hate: 'HATE' };
   let cork = null;
   const thumbs = {};
   function buildCork() {
@@ -219,7 +219,7 @@
       this.fresh = this.fresh.filter((x) => unlocked(x));
       const mm = (s.time / 60) | 0, ss = ('0' + ((s.time | 0) % 60)).slice(-2);
       this.rows = [['TIME IN THE FIGHT', mm + ':' + ss], ['DAMAGE TAKEN', String(Math.round(s.dmg))], ['BEST COMBO', s.combo + ' HITS'], ['PARRIES', String(s.parries)], ['TIMES WHOOPED', String(s.retries)]];
-      this.quip = T.wrap(QUIPS[this.rank], 34);
+      this.quip = T.wrap(QUIPS[this.rank], 21);
       A().music('board'); A().intensity(0.2); A().sting('victory');
     },
     update(dt, rdt) {
@@ -239,11 +239,11 @@
       Px.panel(g, 12, 62, 232, 112, '#efe6d2', '#07060a', '#ffffff'); // the case sheet
       for (let i = 0; i < this.shown; i++) {
         const r = this.rows[i], y = 74 + i * 18;
-        T.draw(g, r[0], 24, y, { color: '#3a2416' }); T.draw(g, r[1], 232, y, { color: '#14101a', align: 'right' });
-        g.fillStyle = '#c9bfa8'; g.fillRect(24, y + 10, 208, 1);
+        T.draw(g, r[0], 22, y, { color: '#3a2416' }); T.draw(g, r[1], 176, y, { color: '#14101a', align: 'right' });
+        g.fillStyle = '#c9bfa8'; g.fillRect(22, y + 10, 154, 1);
       }
       if (this.stamped) { // rank stamp
-        const k = Math.min(1, (this.t - 2.3) / 0.1), sc = 6 + Math.round((1 - k) * 4), x = 180, y = 96;
+        const k = Math.min(1, (this.t - 2.3) / 0.1), sc = 6 + Math.round((1 - k) * 4), x = 190, y = 86;
         g.fillStyle = '#c7352e'; g.fillRect(x - 6, y - 6, 54, 3); g.fillRect(x - 6, y + 51, 54, 3); g.fillRect(x - 6, y - 6, 3, 60); g.fillRect(x + 45, y - 6, 3, 60);
         T.draw(g, this.rank, x + 21, y + 2, { align: 'center', color: '#c7352e', scale: sc });
         T.draw(g, 'RANK', x + 21, y + 56, { align: 'center', color: '#c7352e' });
