@@ -92,12 +92,14 @@
       const key = [str, sc, top, bottom, outline, shear].join('|');
       let c = this._b.get(key);
       if (c) return c;
-      const w = this.width(str, sc), h = 7 * sc, pad = sc + 3, sh = shear ? Math.ceil(h * shear) : 0;
+      const bw = sc >= 3 ? Math.ceil(sc * 0.45) : 0;             // extra stroke weight for big lettering
+      const w = this.width(str, sc) + bw, h = 7 * sc, pad = sc + 3, sh = shear ? Math.ceil(h * shear) : 0;
       const [m, mg] = U.canvas(w + sh, h);
       mg.imageSmoothingEnabled = false;
       for (let r = 0; r < 7; r++) { // draw row by row so we can shear into italics
         mg.save(); mg.beginPath(); mg.rect(0, r * sc, w + sh, sc); mg.clip();
         blit(mg, baseAtlas(), str, Math.round(sh * (1 - r / 6)), 0, sc);
+        if (bw) blit(mg, baseAtlas(), str, Math.round(sh * (1 - r / 6)) + bw, 0, sc);
         mg.restore();
       }
       const [f, fg] = U.canvas(w + sh, h);

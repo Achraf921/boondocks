@@ -2,46 +2,44 @@
 (() => {
   'use strict';
   const BD = window.BD, U = BD.U;
-  const { skull, ear, eye, features, lobes, circ, capsule } = BD.Face;
+  const { skull, eye, features, lobes, circ } = BD.Face;
   const { sin, cos, PI } = Math;
   const TAU = PI * 2;
   const EYE = '#f5f0e6';
 
   /* ------------------------------------------------------------ shared bits */
-  function cap(g, R, c, ol, col, o) {
+  const ring = (cx, cy, rad, n, r, w) => { const o = []; for (let i = 0; i < n; i++) { const a = (i / n) * TAU; o.push([cx + cos(a) * rad, cy + sin(a) * rad, r + (i % 3) * 0.03, w === undefined ? 1 : w]); } return o; };
+  /** hair that hugs the skull down to a hairline. o: { line, vol, boxed, side, wide } */
+  function hairCap(g, R, c, ol, col, o) {
     o = o || {};
-    const f = o.front === undefined ? 0.78 : o.front, hl = o.line === undefined ? -0.58 : o.line, up = o.puff || 0;
-    g.fillStyle = col; g.strokeStyle = c.out; g.lineWidth = ol * 1.6;
+    const w = o.wide || 1, line = o.line === undefined ? -0.52 : o.line, vol = o.vol || 0.05, side = (o.side === undefined ? -0.04 : o.side) * R;
+    g.fillStyle = col; g.strokeStyle = c.out; g.lineWidth = ol * 1.8; g.lineJoin = 'round';
     g.beginPath();
-    g.moveTo(f * R, hl * R + 0.06 * R);
-    g.bezierCurveTo((f - 0.04) * R, (-1.22 - up) * R, -0.92 * R, (-1.2 - up) * R, -0.88 * R, -0.3 * R);
-    g.bezierCurveTo(-0.88 * R, 0.1 * R, -0.8 * R, 0.34 * R, -0.7 * R, 0.46 * R);
-    g.lineTo(-0.64 * R, 0.1 * R);
-    g.quadraticCurveTo(-0.6 * R, -0.16 * R, -0.3 * R, -0.2 * R);
-    g.lineTo(-0.24 * R, hl * R + 0.2 * R);
-    g.quadraticCurveTo(0.2 * R, hl * R - 0.07 * R, f * R, hl * R + 0.06 * R);
+    g.moveTo(-0.95 * R * w, side);
+    g.bezierCurveTo(-1.03 * R * w, (-1.14 - vol) * R, 1.01 * R * w, (-1.16 - vol) * R, 0.93 * R * w, side);
+    if (o.boxed) { g.lineTo(0.76 * R * w, (line + 0.04) * R); g.lineTo(-0.78 * R * w, line * R); }
+    else { g.quadraticCurveTo(0.84 * R * w, line * R, 0.3 * R, (line - 0.03) * R); g.quadraticCurveTo(-0.5 * R, (line - 0.08) * R, -0.82 * R * w, (line + 0.14) * R); }
     g.closePath(); g.stroke(); g.fill();
   }
-  function glasses(g, R, c, ol, col, tint, ey) {
-    ey = (ey === undefined ? -0.02 : ey) * R;
-    g.strokeStyle = col; g.lineWidth = ol * 1.3; g.fillStyle = tint || 'rgba(255,255,255,0.16)';
-    g.beginPath(); g.roundRect(-0.12 * R, ey - 0.28 * R, 0.6 * R, 0.52 * R, 0.12 * R); g.fill(); g.stroke();
-    g.beginPath(); g.roundRect(0.55 * R, ey - 0.27 * R, 0.31 * R, 0.5 * R, 0.1 * R); g.fill(); g.stroke();
-    g.beginPath(); g.moveTo(0.48 * R, ey - 0.1 * R); g.lineTo(0.55 * R, ey - 0.1 * R);
-    g.moveTo(-0.12 * R, ey - 0.14 * R); g.lineTo(-0.5 * R, ey - 0.02 * R); g.stroke();
-    if (!tint) {
-      g.strokeStyle = 'rgba(255,255,255,0.6)'; g.lineWidth = ol;
-      g.beginPath(); g.moveTo(0, ey + 0.14 * R); g.lineTo(0.2 * R, ey - 0.2 * R); g.stroke();
-    }
+  function specs(g, R, c, ol, col, ey, r, tint) {
+    ey *= R;
+    g.strokeStyle = col; g.lineWidth = ol * 1.5; g.fillStyle = tint || 'rgba(255,255,255,0.14)';
+    circ(g, -0.22 * R, ey, r * R); g.fill(); g.stroke();
+    circ(g, 0.5 * R, ey, r * 0.9 * R); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo((-0.22 + r) * R, ey - 0.04 * R); g.quadraticCurveTo(0.16 * R, ey - 0.14 * R, (0.5 - r * 0.9) * R, ey - 0.04 * R);
+    g.moveTo((-0.22 - r) * R, ey - 0.04 * R); g.lineTo(-0.92 * R, ey); g.stroke();
+    if (!tint) { g.strokeStyle = 'rgba(255,255,255,0.75)'; g.lineWidth = ol; g.beginPath(); g.moveTo(-0.38 * R, ey + 0.1 * R); g.lineTo(-0.22 * R, ey - 0.16 * R); g.stroke(); }
   }
   function wrinkles(g, R, c, ol, j) {
-    g.strokeStyle = c.skinS; g.lineWidth = ol * 0.9; g.lineCap = 'round';
+    g.strokeStyle = c.skinS; g.lineWidth = ol * 1.1; g.lineCap = 'round';
     g.beginPath();
-    g.moveTo(0, 0.26 * R); g.quadraticCurveTo(0.2 * R, 0.34 * R, 0.4 * R, 0.27 * R);
-    g.moveTo(0.32 * R, 0.42 * R); g.quadraticCurveTo(0.24 * R, 0.6 * R * j, 0.29 * R, 0.8 * R * j);
-    g.moveTo(0.1 * R, -0.66 * R); g.quadraticCurveTo(0.42 * R, -0.74 * R, 0.72 * R, -0.62 * R);
+    g.moveTo(-0.36 * R, -0.62 * R); g.quadraticCurveTo(0.12 * R, -0.7 * R, 0.6 * R, -0.6 * R);
+    g.moveTo(-0.26 * R, -0.8 * R); g.quadraticCurveTo(0.12 * R, -0.86 * R, 0.5 * R, -0.78 * R);
+    g.moveTo(-0.12 * R, 0.5 * R); g.quadraticCurveTo(-0.26 * R, 0.66 * R * j, -0.18 * R, 0.86 * R * j);
+    g.moveTo(0.46 * R, 0.5 * R); g.quadraticCurveTo(0.58 * R, 0.66 * R * j, 0.5 * R, 0.86 * R * j);
     g.stroke(); g.lineCap = 'butt';
   }
+  const tuft = (g, list, R, c, ol, col) => { lobes(g, list, R, 0, 0, c.out, ol); lobes(g, list, R, 0, 0, col, 0); };
   /** suit front: shirt V, tie, lapels. Torso space: x forward, y up negative, clipped to the torso. */
   function suitFront(g, L, ws, c, tie, bow) {
     g.fillStyle = c.shirt2;
@@ -71,260 +69,284 @@
   }
 
   /* --------------------------------------------------------------- the kids */
-  // one big round afro: a core mass plus a ring of small bumps (none hanging in front of the face)
-  const AFRO_BACK = [[-0.22, -0.8, 1.34, 0.5]];
-  for (let i = 0; i < 17; i++) { const a = 1.72 + (i / 16) * 4.26; AFRO_BACK.push([-0.22 + Math.cos(a) * 1.3, -0.8 + Math.sin(a) * 1.3, 0.27 + (i % 3) * 0.035, 1]); }
-  const AFRO_FRONT = [[0.34, -0.98, 0.42, 0.45], [-0.12, -1.03, 0.5, 0.45], [0.72, -0.85, 0.3, 0.45], [-0.58, -0.42, 0.42, 0.45], [-0.62, -0.82, 0.5, 0.45]];
-  const AFRO_SHEEN = [[-0.3, -1.5, 0.7], [0.3, -1.3, 0.6], [-0.9, -1.2, 0.6]];
-
+  // Huey: the afro is the character. One huge sphere, ears poking out, face low in the middle.
+  const AFRO = [[0, -0.76, 1.84, 0.5]].concat(ring(0, -0.76, 1.8, 26, 0.26));
+  const AFRO_LINE = [[-0.62, -0.92, 0.44, 0.4], [-0.12, -1.0, 0.48, 0.4], [0.4, -0.97, 0.46, 0.4], [0.8, -0.82, 0.32, 0.4], [-0.94, -0.64, 0.28, 0.4], [0.95, -0.58, 0.22, 0.4]];
   function hueyHead(g, R, c, e, rig, flat) {
     const ol = rig.ol, hx = rig.hair.x, hy = rig.hair.y;
-    lobes(g, AFRO_BACK, R, hx, hy, c.out, ol);
-    lobes(g, AFRO_BACK, R, hx, hy, c.hair, 0);
-    skull(g, R, c, { ol });
-    lobes(g, AFRO_FRONT, R, hx, hy, c.hair, 0);
-    ear(g, R, c, { ol });
+    lobes(g, AFRO, R, hx, hy, c.out, ol);
+    lobes(g, AFRO, R, hx, hy, c.hair, 0);
+    if (!flat) {
+      g.strokeStyle = c.hairHi; g.lineWidth = 0.14 * R; g.lineCap = 'round';
+      g.beginPath(); g.arc(hx, -0.76 * R + hy, 1.5 * R, -2.5, -1.75); g.stroke();
+      g.beginPath(); g.arc(hx, -0.76 * R + hy, 1.18 * R, -2.3, -1.9); g.stroke();
+      g.beginPath(); g.arc(hx, -0.76 * R + hy, 1.5 * R, -1.3, -0.95); g.stroke();
+      g.lineCap = 'butt';
+    }
+    skull(g, R, c, { ol, ear: 1.1 });
+    lobes(g, AFRO_LINE, R, hx, hy, c.hair, 0);
     if (flat) return;
-    g.strokeStyle = c.hairHi; g.lineWidth = 0.1 * R; g.lineCap = 'round';
-    for (const l of AFRO_SHEEN) { g.beginPath(); g.arc(l[0] * R + hx, l[1] * R + hy, l[2] * R * 0.66, -2.2, -1.0); g.stroke(); }
-    g.lineCap = 'butt';
-    features(g, R, c, e, { ol, brow: 0.13 });
+    features(g, R, c, e, { ol, brow: 0.16 });
   }
 
   function rileyHead(g, R, c, e, rig, flat) {
     const ol = rig.ol, sw = rig.hair.x * 0.5;
-    // braid tails at the nape
-    for (let i = 0; i < 4; i++) {
-      const x0 = (-0.56 - i * 0.09) * R, y0 = (0.42 - i * 0.07) * R, x1 = x0 - (0.14 + i * 0.03) * R + sw, y1 = y0 + (0.5 - i * 0.03) * R;
-      g.strokeStyle = c.out; g.lineWidth = 0.15 * R + ol * 2; g.lineCap = 'round';
-      g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
-      g.strokeStyle = c.hair; g.lineWidth = 0.15 * R; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+    g.lineCap = 'round';
+    for (let i = 0; i < 4; i++) { // braid tails behind the ear
+      const x0 = (-0.72 - i * 0.1) * R, y0 = (0.28 + i * 0.03) * R, x1 = x0 - 0.1 * R + sw, y1 = y0 + (0.8 - i * 0.08) * R;
+      g.strokeStyle = c.out; g.lineWidth = 0.17 * R + ol * 2; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+      g.strokeStyle = c.hair; g.lineWidth = 0.17 * R; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
     }
     g.lineCap = 'butt';
-    skull(g, R, c, { ol });
-    cap(g, R, c, ol, c.hair, { front: 0.8, line: -0.6 });
-    ear(g, R, c, { ol });
+    skull(g, R, c, { ol, ear: 1.1 });
+    hairCap(g, R, c, ol, c.hair, { boxed: true, line: -0.5, vol: 0.02 });
     if (flat) return;
-    // cornrows: scalp showing between the braids
-    g.strokeStyle = c.skinS; g.lineWidth = 0.05 * R; g.lineCap = 'round';
-    for (let i = 0; i < 5; i++) {
-      const fx = (0.7 - i * 0.2) * R, by = (-0.62 + i * 0.2) * R;
-      g.beginPath(); g.moveTo(fx, -0.62 * R - (i > 3 ? 0.02 : 0) * R);
-      g.bezierCurveTo(fx - 0.1 * R, (-1.14 + i * 0.07) * R, -0.8 * R, (-1.1 + i * 0.22) * R, -0.84 * R, by + 0.42 * R);
-      g.stroke();
-    }
+    g.strokeStyle = c.skinS; g.lineWidth = 0.05 * R; g.lineCap = 'butt'; // cornrows: thin lines of scalp between the braids
+    for (let i = 0; i < 6; i++) { const x0 = (-0.62 + i * 0.25) * R; g.beginPath(); g.moveTo(x0, -0.52 * R); g.quadraticCurveTo(x0 * 0.9, -0.82 * R, x0 * 0.66, -1.02 * R); g.stroke(); }
     g.lineCap = 'butt';
-    features(g, R, c, e, { ol, brow: 0.1 });
-    if (rig.vars.goggles) { // airsoft safety first
-      g.fillStyle = 'rgba(120,200,255,0.3)'; g.strokeStyle = '#22252b'; g.lineWidth = ol * 1.6;
-      g.beginPath(); g.roundRect(-0.14 * R, -0.3 * R, 1.02 * R, 0.62 * R, 0.2 * R); g.fill(); g.stroke();
+    features(g, R, c, e, { ol, brow: 0.11, eye: 1.04 });
+    if (rig.vars.goggles) {
+      g.fillStyle = 'rgba(120,200,255,0.32)'; g.strokeStyle = '#22252b'; g.lineWidth = ol * 1.8;
+      g.beginPath(); g.roundRect(-0.62 * R, -0.24 * R, 1.46 * R, 0.66 * R, 0.24 * R); g.fill(); g.stroke();
       g.strokeStyle = '#c7352e'; g.lineWidth = 0.16 * R;
-      g.beginPath(); g.moveTo(-0.14 * R, -0.04 * R); g.lineTo(-0.82 * R, -0.2 * R); g.stroke();
-      g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = ol;
-      g.beginPath(); g.moveTo(0.04 * R, 0.14 * R); g.lineTo(0.24 * R, -0.2 * R); g.stroke();
+      g.beginPath(); g.moveTo(-0.62 * R, 0.06 * R); g.lineTo(-0.96 * R, 0); g.stroke();
+      g.strokeStyle = 'rgba(255,255,255,0.75)'; g.lineWidth = ol;
+      g.beginPath(); g.moveTo(-0.44 * R, 0.24 * R); g.lineTo(-0.24 * R, -0.14 * R); g.stroke();
     }
   }
 
-  const PUFF_FAR = [[0.46, -1.3, 0.62], [0.92, -1.46, 0.3], [0.18, -1.78, 0.3], [0.86, -1.02, 0.28]];
-  const PUFF_NEAR = [[-0.88, -1.0, 0.74], [-1.36, -1.3, 0.36], [-0.62, -1.62, 0.36], [-1.42, -0.7, 0.34], [-1.1, -0.4, 0.3]];
+  const PUFF_FAR = [[1.04, -1.0, 0.7, 1]].concat(ring(1.04, -1.0, 0.66, 9, 0.2));
+  const PUFF_NEAR = [[-1.1, -1.0, 0.78, 1]].concat(ring(-1.1, -1.0, 0.74, 10, 0.2));
   function jazmineHead(g, R, c, e, rig, flat) {
     const ol = rig.ol, hx = rig.hair.x, hy = rig.hair.y;
     lobes(g, PUFF_FAR, R, hx, hy, c.out, ol); lobes(g, PUFF_FAR, R, hx, hy, c.hairS, 0);
-    skull(g, R, c, { ol });
-    cap(g, R, c, ol, c.hair, { front: 0.76, line: -0.62 });
-    ear(g, R, c, { ol });
     lobes(g, PUFF_NEAR, R, hx, hy, c.out, ol); lobes(g, PUFF_NEAR, R, hx, hy, c.hair, 0);
-    g.fillStyle = c.shirt; circ(g, -0.5 * R + hx * 0.4, -0.76 * R, 0.13 * R); g.fill();
+    skull(g, R, c, { ol, chin: 0.15 });
+    hairCap(g, R, c, ol, c.hair, { line: -0.54, vol: 0.03 });
+    g.fillStyle = c.shirt; circ(g, -0.74 * R, -0.66 * R, 0.13 * R); g.fill(); circ(g, 0.74 * R, -0.68 * R, 0.11 * R); g.fill();
     if (flat) return;
-    g.strokeStyle = c.hairHi; g.lineWidth = 0.09 * R; g.lineCap = 'round';
-    g.beginPath(); g.arc(-0.88 * R + hx, -1.0 * R + hy, 0.5 * R, -2.3, -1.1); g.stroke(); g.lineCap = 'butt';
-    features(g, R, c, e, { ol, brow: 0.07, eye: 1.06 });
-    g.strokeStyle = c.out; g.lineWidth = ol; // lashes
-    g.beginPath(); g.moveTo(-0.08 * R, 0); g.lineTo(-0.18 * R, -0.08 * R); g.moveTo(-0.06 * R, -0.1 * R); g.lineTo(-0.14 * R, -0.2 * R); g.stroke();
+    g.strokeStyle = c.hairHi; g.lineWidth = 0.1 * R; g.lineCap = 'round';
+    g.beginPath(); g.arc(-1.1 * R + hx, -1.0 * R + hy, 0.5 * R, -2.4, -1.2); g.stroke();
+    g.beginPath(); g.moveTo(0.05 * R, -1.12 * R); g.lineTo(0.08 * R, -0.6 * R); g.stroke(); g.lineCap = 'butt';
+    features(g, R, c, e, { ol, brow: 0.07, eye: 1.08 });
+    g.fillStyle = c.skinS; // freckles
+    for (const [x, y] of [[-0.5, 0.46], [-0.36, 0.52], [-0.24, 0.45], [0.5, 0.46], [0.62, 0.52], [0.72, 0.44]]) g.fillRect(x * R, y * R, 0.06 * R, 0.06 * R);
+    g.strokeStyle = c.out; g.lineWidth = ol;
+    g.beginPath(); g.moveTo(-0.52 * R, 0.0); g.lineTo(-0.62 * R, -0.1 * R); g.moveTo(0.76 * R, 0.0); g.lineTo(0.84 * R, -0.1 * R); g.stroke();
   }
 
   /* ------------------------------------------------------------- the adults */
-  const GD_HAIR = [[-0.62, -0.24, 0.3], [-0.8, 0.1, 0.27], [-0.52, -0.46, 0.24], [-0.7, 0.36, 0.2], [-0.84, -0.14, 0.22]];
+  const GD_NEAR = [[-0.98, -0.5, 0.32], [-1.08, -0.22, 0.26], [-0.86, -0.76, 0.24]];
+  const GD_FAR = [[0.94, -0.46, 0.24], [1.0, -0.18, 0.2], [0.86, -0.7, 0.18]];
   function granddadHead(g, R, c, e, rig, flat) {
-    const ol = rig.ol;
-    skull(g, R, c, { ol, jaw: 1.08, nose: 1.06 });
-    lobes(g, GD_HAIR, R, 0, 0, c.out, ol); lobes(g, GD_HAIR, R, 0, 0, c.hair, 0);
-    ear(g, R, c, { ol });
+    const ol = rig.ol, k = { ol, jaw: 1.2, chin: 0.27, wide: 0.94, eye: 0.74, eyeY: -0.04, brow: 0.16, browCol: 'hair', noseT: 'wide', noseS: 1.15, noseY: 0.44, mouthY: 0.72 };
+    tuft(g, GD_FAR, R, c, ol, c.hairS);
+    skull(g, R, c, k);
+    tuft(g, GD_NEAR, R, c, ol, c.hair);
     if (flat) return;
-    wrinkles(g, R, c, ol, 1.08);
-    features(g, R, c, e, { ol, eye: 0.78, eyeY: -0.02, brow: 0.11, jaw: 1.08, mouthY: 0.66 });
-    glasses(g, R, c, ol, c.glass);
+    g.fillStyle = c.skinH; g.beginPath(); g.ellipse(0.2 * R, -0.88 * R, 0.34 * R, 0.1 * R, 0, 0, TAU); g.fill();
+    wrinkles(g, R, c, ol, 1.2);
+    features(g, R, c, e, k);
+    specs(g, R, c, ol, c.glass, -0.04, 0.31);
   }
 
   function tomHead(g, R, c, e, rig, flat) {
-    const ol = rig.ol, poss = rig.def.possessed;
-    skull(g, R, c, { ol, jaw: 1.08, nose: 1.05 });
-    cap(g, R, c, ol, c.hair, { front: 0.74, line: -0.66 });
-    ear(g, R, c, { ol });
+    const ol = rig.ol, poss = rig.def.possessed, k = { ol, jaw: 1.14, chin: 0.25, eye: 0.82, eyeY: 0, brow: 0.1, noseT: 'wide', noseS: 0.9, noseY: 0.44, mouthY: 0.7 };
+    skull(g, R, c, k);
+    hairCap(g, R, c, ol, c.hair, { line: -0.56, vol: 0.04 });
     if (flat) return;
     if (poss) {
-      g.fillStyle = 'rgba(20,30,10,0.45)';
-      g.beginPath(); g.ellipse(0.42 * R, -0.02 * R, 0.52 * R, 0.3 * R, 0, 0, TAU); g.fill();
-      g.strokeStyle = '#3e5a2a'; g.lineWidth = ol * 0.8;
-      g.beginPath(); g.moveTo(-0.2 * R, -0.5 * R); g.lineTo(-0.05 * R, -0.36 * R); g.lineTo(-0.16 * R, -0.24 * R); g.moveTo(0.1 * R, 0.5 * R); g.lineTo(0, 0.66 * R); g.stroke();
+      g.fillStyle = 'rgba(20,30,10,0.5)';
+      g.beginPath(); g.ellipse(0.14 * R, 0, 0.74 * R, 0.3 * R, 0, 0, TAU); g.fill();
+      g.strokeStyle = '#3e5a2a'; g.lineWidth = ol;
+      g.beginPath(); g.moveTo(-0.6 * R, -0.4 * R); g.lineTo(-0.46 * R, -0.28 * R); g.lineTo(-0.56 * R, -0.16 * R); g.moveTo(0.6 * R, 0.5 * R); g.lineTo(0.5 * R, 0.66 * R); g.stroke();
     }
-    features(g, R, c, e, { ol, eye: 0.8, eyeY: -0.02, brow: 0.09, jaw: 1.08, mouthY: 0.66 });
+    features(g, R, c, e, k);
   }
 
-  const RUCK_HAIR = [[-0.74, -0.34, 0.2], [-0.82, -0.02, 0.2], [-0.66, -0.6, 0.17], [-0.76, 0.26, 0.16]];
+  const RUCK_NEAR = [[-0.96, -0.42, 0.2], [-1.02, -0.18, 0.18], [-0.86, -0.62, 0.16]];
+  const RUCK_FAR = [[0.92, -0.4, 0.16], [0.96, -0.18, 0.14]];
   function ruckusHead(g, R, c, e, rig, flat) {
-    const ol = rig.ol;
-    g.save(); g.scale(1.16, 1.06);
-    // jowl
-    g.fillStyle = c.skinS; g.strokeStyle = c.out; g.lineWidth = ol * 2;
-    g.beginPath(); g.ellipse(0.16 * R, 0.98 * R, 0.62 * R, 0.34 * R, 0, 0, TAU); g.stroke(); g.fill();
-    skull(g, R, c, { ol, jaw: 1.12, nose: 1.15 });
-    lobes(g, RUCK_HAIR, R, 0, 0, c.hair, 0);
-    ear(g, R, c, { ol });
+    const ol = rig.ol, k = { ol, jaw: 1.06, chin: 0.42, ear: 1.1, noEyes: true, eye: 0.9, eyeY: -0.12, brow: 0.09, browCol: 'hair', noseT: 'wide', noseS: 1.5, noseY: 0.36, mouthY: 0.74, mouthW: 1.5 };
+    g.save(); g.scale(1.2, 1.0);
+    g.fillStyle = c.skinS; g.strokeStyle = c.out; g.lineWidth = ol * 2; // jowls
+    g.beginPath(); g.ellipse(0.12 * R, 0.94 * R, 0.72 * R, 0.3 * R, 0, 0, TAU); g.stroke(); g.fill();
+    lobes(g, RUCK_FAR, R, 0, 0, c.hairS, 0);
+    skull(g, R, c, k);
+    lobes(g, RUCK_NEAR, R, 0, 0, c.hair, 0);
     if (!flat) {
       const eN = rig._eN || (rig._eN = {}), eF = rig._eF || (rig._eF = {});
-      Object.assign(eN, e, { lid: e.lid >= 0.95 ? 1 : 0.03, tilt: e.tilt * 0.3, pupil: 0.52, lookX: 0.45 });
-      Object.assign(eF, e, { lid: e.lid >= 0.95 ? 1 : 0.6 });
-      eye(g, 0.15 * R, -0.1 * R, 0.56 * R, 0.6 * R, eN, c, 1, ol);
-      eye(g, 0.68 * R, -0.04 * R, 0.25 * R, 0.3 * R, eF, c, -1, ol);
-      features(g, R, c, e, { ol, noEyes: true, eye: 0.9, eyeY: -0.12, brow: 0.08, jaw: 1.12, mouthY: 0.64, mouthW: 1.4 });
-      g.strokeStyle = c.skinS; g.lineWidth = ol * 1.4; g.lineCap = 'round'; // heavy lower lip
-      g.beginPath(); g.moveTo(0.26 * R, 0.86 * R); g.quadraticCurveTo(0.52 * R, 0.96 * R, 0.76 * R, 0.84 * R); g.stroke(); g.lineCap = 'butt';
+      Object.assign(eN, e, { lid: e.lid >= 0.95 ? 1 : 0.02, tilt: e.tilt * 0.3, pupil: 0.5, lookX: 0.4 });
+      Object.assign(eF, e, { lid: e.lid >= 0.95 ? 1 : 0.56 });
+      eye(g, -0.26 * R, -0.1 * R, 0.68 * R, 0.68 * R, eN, c, 1, ol);   // the big wandering eye
+      eye(g, 0.5 * R, -0.02 * R, 0.44 * R, 0.34 * R, eF, c, -1, ol);
+      features(g, R, c, e, k);
+      g.strokeStyle = c.skinS; g.lineWidth = ol * 1.8; g.lineCap = 'round'; // heavy lower lip
+      g.beginPath(); g.moveTo(-0.12 * R, 0.96 * R); g.quadraticCurveTo(0.16 * R, 1.06 * R, 0.44 * R, 0.95 * R); g.stroke(); g.lineCap = 'butt';
+      g.fillStyle = c.hair; // stubble
+      for (let i = 0; i < 7; i++) g.fillRect((-0.4 + i * 0.17) * R, (0.86 + (i % 2) * 0.07) * R, 0.05 * R, 0.05 * R);
     }
     g.restore();
   }
 
-  const STINK_HAIR = [[-0.66, -0.3, 0.26], [-0.82, 0.02, 0.24], [-0.56, -0.56, 0.2], [-0.74, 0.3, 0.2], [-0.86, -0.28, 0.2]];
+  const STINK_NEAR = [[-0.94, -0.4, 0.26], [-1.02, -0.16, 0.22], [-0.82, -0.62, 0.2]];
+  const STINK_FAR = [[0.9, -0.34, 0.2], [0.94, -0.08, 0.17]];
   function stinkHead(g, R, c, e, rig, flat) {
-    const ol = rig.ol;
-    skull(g, R, c, { ol, jaw: 1.06, nose: 1.13 });
-    lobes(g, STINK_HAIR, R, 0, 0, c.out, ol); lobes(g, STINK_HAIR, R, 0, 0, c.hair, 0);
-    ear(g, R, c, { ol });
+    const ol = rig.ol, k = { ol, jaw: 1.14, chin: 0.2, wide: 0.92, eye: 0.8, eyeY: -0.02, brow: 0.15, browCol: 'hair', noseT: 'wide', noseS: 1.25, noseY: 0.42, mouthY: 0.7, mouthW: 1.45 };
+    tuft(g, STINK_FAR, R, c, ol, c.hairS);
+    skull(g, R, c, k);
+    tuft(g, STINK_NEAR, R, c, ol, c.hair);
     if (!flat) {
-      wrinkles(g, R, c, ol, 1.06);
-      features(g, R, c, e, { ol, eye: 0.8, eyeY: -0.03, brow: 0.12, jaw: 1.06, mouthY: 0.64, mouthW: 1.3 });
-      if (e.mouth === 'grin' && e.open < 0.1) { g.fillStyle = '#2a0f12'; g.fillRect(0.5 * R, 0.66 * R, 0.09 * R, 0.14 * R); } // the missing tooth
-      g.fillStyle = c.hair; // chin stubble
-      for (let i = 0; i < 5; i++) { circ(g, (0.2 + i * 0.1) * R, (0.98 - Math.abs(i - 2) * 0.03) * R * 1.03, 0.035 * R); g.fill(); }
+      wrinkles(g, R, c, ol, 1.14);
+      features(g, R, c, e, k);
+      if (e.mouth === 'grin' && e.open < 0.1) { g.fillStyle = '#2a0f12'; g.fillRect(0.2 * R, 0.78 * R, 0.1 * R, 0.16 * R); } // the missing tooth
+      g.fillStyle = c.hair;
+      for (let i = 0; i < 6; i++) g.fillRect((-0.16 + i * 0.12) * R, (1.02 + (i % 2) * 0.05) * R, 0.05 * R, 0.05 * R);
     }
-    if (rig.def.kasa) {
+    if (rig.def.kasa) { // the wandering-swordsman hat
       g.fillStyle = c.hat; g.strokeStyle = c.out; g.lineWidth = ol * 2;
-      g.beginPath(); g.moveTo(-1.66 * R, -0.42 * R); g.quadraticCurveTo(-0.3 * R, -1.5 * R, 0.08 * R, -1.62 * R);
-      g.quadraticCurveTo(0.5 * R, -1.5 * R, 1.66 * R, -0.5 * R); g.quadraticCurveTo(0, -0.22 * R, -1.66 * R, -0.42 * R); g.closePath(); g.stroke(); g.fill();
+      g.beginPath(); g.moveTo(-1.8 * R, -0.42 * R); g.quadraticCurveTo(-0.3 * R, -1.6 * R, 0.08 * R, -1.72 * R);
+      g.quadraticCurveTo(0.5 * R, -1.6 * R, 1.8 * R, -0.46 * R); g.quadraticCurveTo(0, -0.2 * R, -1.8 * R, -0.42 * R); g.closePath(); g.stroke(); g.fill();
       if (!flat) {
-        g.strokeStyle = c.hatS; g.lineWidth = ol;
-        g.beginPath();
-        for (let i = -3; i <= 3; i++) { g.moveTo(0.08 * R, -1.6 * R); g.lineTo(i * 0.46 * R, (-0.4 + Math.abs(i) * 0.02) * R); }
-        g.stroke();
-        g.fillStyle = 'rgba(0,0,0,0.28)'; // brim shadow over the eyes
-        g.beginPath(); g.moveTo(-0.8 * R, -0.34 * R); g.quadraticCurveTo(0, -0.24 * R, 0.9 * R, -0.36 * R); g.lineTo(0.9 * R, -0.06 * R); g.quadraticCurveTo(0, 0.08 * R, -0.8 * R, -0.04 * R); g.closePath(); g.fill();
+        g.strokeStyle = c.hatS; g.lineWidth = ol * 1.2;
+        g.beginPath(); for (let i = -3; i <= 3; i++) { g.moveTo(0.08 * R, -1.7 * R); g.lineTo(i * 0.5 * R, (-0.38 + Math.abs(i) * 0.02) * R); } g.stroke();
+        g.fillStyle = 'rgba(0,0,0,0.3)'; // brim shadow across the eyes
+        g.beginPath(); g.moveTo(-0.9 * R, -0.33 * R); g.quadraticCurveTo(0, -0.24 * R, 0.9 * R, -0.35 * R); g.lineTo(0.9 * R, -0.04 * R); g.quadraticCurveTo(0, 0.08 * R, -0.9 * R, -0.04 * R); g.closePath(); g.fill();
       }
     }
   }
 
-  const SWOOP = [[0.42, -0.98, 0.36], [0.72, -0.84, 0.24], [0.1, -1.04, 0.36]];
+  // A Pimp Named Slickback. Yes, you say the whole thing.
+  function slickHead(g, R, c, e, rig, flat) {
+    const ol = rig.ol, sw = rig.hair.x * 0.6, k = { ol, jaw: 1.16, chin: 0.2, wide: 0.9, eye: 0.76, eyeY: 0, brow: 0.07, noseT: 'wide', noseS: 0.9, noseY: 0.44, mouthY: 0.7 };
+    g.fillStyle = c.hair; g.strokeStyle = c.out; g.lineWidth = ol * 2; // the perm, down to the shoulders
+    g.beginPath(); g.moveTo(-0.98 * R, -0.5 * R); g.bezierCurveTo(-1.2 * R, 0.4 * R, -1.34 * R + sw, 1.2 * R, -1.12 * R + sw, 1.8 * R);
+    g.lineTo(-0.5 * R + sw, 1.66 * R); g.lineTo(-0.4 * R, 0.6 * R); g.lineTo(0.6 * R, 0.6 * R); g.lineTo(0.7 * R + sw, 1.64 * R); g.lineTo(1.14 * R + sw, 1.74 * R);
+    g.bezierCurveTo(1.3 * R + sw, 1.1 * R, 1.14 * R, 0.3 * R, 0.96 * R, -0.5 * R); g.closePath(); g.stroke(); g.fill();
+    skull(g, R, c, k);
+    g.fillStyle = c.hair; g.lineWidth = ol * 1.6; // locks framing the face
+    g.beginPath(); g.moveTo(-0.1 * R, -0.74 * R); g.bezierCurveTo(-0.84 * R, -0.62 * R, -1.02 * R, 0, -0.94 * R, 0.84 * R); g.lineTo(-0.72 * R, 0.72 * R); g.bezierCurveTo(-0.8 * R, 0.1 * R, -0.58 * R, -0.3 * R, -0.1 * R, -0.74 * R); g.closePath(); g.stroke(); g.fill();
+    g.beginPath(); g.moveTo(0.3 * R, -0.74 * R); g.bezierCurveTo(0.84 * R, -0.62 * R, 0.98 * R, 0, 0.92 * R, 0.8 * R); g.lineTo(0.76 * R, 0.7 * R); g.bezierCurveTo(0.8 * R, 0.1 * R, 0.66 * R, -0.3 * R, 0.3 * R, -0.74 * R); g.closePath(); g.stroke(); g.fill();
+    if (!flat) {
+      g.strokeStyle = c.hairHi; g.lineWidth = ol * 1.4; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(-1.06 * R, 0.5 * R); g.quadraticCurveTo(-1.16 * R + sw, 1.0 * R, -1.02 * R + sw, 1.5 * R); g.moveTo(-0.86 * R, 0.1 * R); g.lineTo(-0.84 * R, 0.6 * R); g.stroke();
+      features(g, R, c, e, k);
+      g.strokeStyle = c.hair; g.lineWidth = 0.06 * R; // pencil moustache + soul patch
+      g.beginPath(); g.moveTo(-0.08 * R, 0.66 * R); g.quadraticCurveTo(0.16 * R, 0.58 * R, 0.4 * R, 0.66 * R); g.stroke(); g.lineCap = 'butt';
+      g.fillStyle = c.hair; g.fillRect(0.1 * R, 0.96 * R, 0.12 * R, 0.14 * R);
+    }
+    // the hat
+    g.fillStyle = c.hat; g.strokeStyle = c.out; g.lineWidth = ol * 2;
+    g.beginPath(); g.moveTo(-0.84 * R, -0.6 * R); g.bezierCurveTo(-0.9 * R, -1.74 * R, 0.96 * R, -1.78 * R, 0.9 * R, -0.64 * R); g.closePath(); g.stroke(); g.fill();
+    if (!flat) {
+      g.fillStyle = c.hatS; g.beginPath(); g.moveTo(-0.84 * R, -0.6 * R); g.bezierCurveTo(-0.9 * R, -1.74 * R, -0.3 * R, -1.76 * R, -0.3 * R, -1.6 * R); g.lineTo(-0.4 * R, -0.6 * R); g.closePath(); g.fill();
+      g.fillStyle = c.band; g.fillRect(-0.86 * R, -0.9 * R, 1.76 * R, 0.2 * R);
+    }
+    g.fillStyle = c.hat;
+    g.beginPath(); g.ellipse(0.04 * R, -0.62 * R, 1.8 * R, 0.3 * R, -0.06, 0, TAU); g.stroke(); g.fill();
+    if (!flat) {
+      g.fillStyle = c.hatH; g.beginPath(); g.ellipse(0.3 * R, -0.68 * R, 1.1 * R, 0.1 * R, -0.06, 0, TAU); g.fill();
+      g.fillStyle = c.feather; g.strokeStyle = c.out; g.lineWidth = ol * 1.6; // the plume
+      g.beginPath(); g.moveTo(-0.7 * R, -0.84 * R); g.bezierCurveTo(-1.5 * R, -1.3 * R, -1.9 * R + sw, -1.9 * R, -1.5 * R + sw, -2.3 * R);
+      g.bezierCurveTo(-1.36 * R + sw, -1.8 * R, -1.0 * R, -1.3 * R, -0.52 * R, -0.9 * R); g.closePath(); g.stroke(); g.fill();
+    }
+  }
+
+  const SWOOP = [[0.2, -1.02, 0.36], [0.56, -0.9, 0.28], [-0.2, -1.06, 0.34]];
   function guestHead(g, R, c, e, rig, flat) {
-    const ol = rig.ol;
-    skull(g, R, c, { ol, jaw: 1.08, nose: 1.09 });
-    cap(g, R, c, ol, c.hair, { front: 0.72, line: -0.66, puff: 0.04 });
+    const ol = rig.ol, k = { ol, jaw: 1.16, chin: 0.26, wide: 0.94, eye: 0.74, eyeY: -0.02, brow: 0.07, noseS: 1.5, noseY: 0.46, mouthY: 0.72 };
+    skull(g, R, c, k);
+    hairCap(g, R, c, ol, c.hair, { line: -0.6, vol: 0.06 });
     lobes(g, SWOOP, R, 0, 0, c.hair, 0);
-    ear(g, R, c, { ol });
     if (flat) return;
-    g.strokeStyle = c.hairHi; g.lineWidth = 0.08 * R; g.lineCap = 'round';
-    g.beginPath(); g.arc(0.3 * R, -0.96 * R, 0.3 * R, -2.4, -0.9); g.stroke(); g.lineCap = 'butt';
-    features(g, R, c, e, { ol, eye: 0.74, eyeY: -0.04, brow: 0.07, jaw: 1.08, mouthY: 0.66 });
+    g.strokeStyle = c.hairHi; g.lineWidth = 0.09 * R; g.lineCap = 'round';
+    g.beginPath(); g.arc(0.14 * R, -0.98 * R, 0.34 * R, -2.5, -0.8); g.stroke(); g.lineCap = 'butt';
+    features(g, R, c, e, k);
     if (rig.def.monocle) {
-      g.strokeStyle = '#d9b34a'; g.lineWidth = ol * 1.2; circ(g, 0.19 * R, -0.04 * R, 0.3 * R); g.stroke();
-      g.beginPath(); g.moveTo(0.19 * R, 0.26 * R); g.quadraticCurveTo(0.1 * R, 0.8 * R, 0.3 * R, 1.2 * R); g.stroke();
+      g.strokeStyle = '#d9b34a'; g.lineWidth = ol * 1.4; circ(g, -0.22 * R, -0.02 * R, 0.3 * R); g.stroke();
+      g.beginPath(); g.moveTo(-0.3 * R, 0.28 * R); g.quadraticCurveTo(-0.5 * R, 0.8 * R, -0.3 * R, 1.3 * R); g.stroke();
     }
   }
 
   function guardHead(g, R, c, e, rig, flat) {
-    const ol = rig.ol;
-    g.save(); g.scale(1.06, 1.02);
-    skull(g, R, c, { ol, jaw: 1.14, nose: 1.08 });
-    cap(g, R, c, ol, c.hair, { front: 0.76, line: -0.74 });
-    ear(g, R, c, { ol });
-    if (!flat) {
-      features(g, R, c, e, { ol, noEyes: true, eye: 0.8, eyeY: -0.04, brow: 0.01, jaw: 1.14, mouthY: 0.66 });
-      g.fillStyle = '#101014'; g.strokeStyle = c.out; g.lineWidth = ol;
-      g.beginPath(); g.moveTo(-0.14 * R, -0.3 * R); g.lineTo(0.9 * R, -0.3 * R); g.lineTo(0.86 * R, 0.08 * R); g.quadraticCurveTo(0.66 * R, 0.2 * R, 0.52 * R, 0); g.quadraticCurveTo(0.2 * R, 0.3 * R, -0.12 * R, 0.06 * R); g.closePath(); g.fill();
-      g.beginPath(); g.moveTo(-0.14 * R, -0.22 * R); g.lineTo(-0.5 * R, -0.06 * R); g.stroke();
-      g.strokeStyle = 'rgba(255,255,255,0.5)'; g.beginPath(); g.moveTo(0.02 * R, -0.02 * R); g.lineTo(0.2 * R, -0.24 * R); g.stroke();
-      g.strokeStyle = '#d8d2c4'; g.lineWidth = ol; // earpiece coil
-      g.beginPath(); g.moveTo(-0.5 * R, 0.3 * R); g.bezierCurveTo(-0.7 * R, 0.6 * R, -0.4 * R, 0.8 * R, -0.6 * R, 1.2 * R); g.stroke();
-    }
-    g.restore();
+    const ol = rig.ol, k = { ol, jaw: 1.18, chin: 0.36, wide: 1.04, noEyes: true, eye: 0.8, eyeY: -0.04, brow: 0.01, noseT: 'wide', noseY: 0.44, mouthY: 0.72 };
+    skull(g, R, c, k);
+    hairCap(g, R, c, ol, c.hair, { boxed: true, line: -0.66, vol: 0.02, wide: 1.04 });
+    if (flat) return;
+    features(g, R, c, e, k);
+    g.fillStyle = '#101014'; g.strokeStyle = c.out; g.lineWidth = ol; // shades
+    g.beginPath(); g.roundRect(-0.6 * R, -0.26 * R, 0.68 * R, 0.4 * R, 0.1 * R); g.fill();
+    g.beginPath(); g.roundRect(0.24 * R, -0.26 * R, 0.58 * R, 0.38 * R, 0.1 * R); g.fill();
+    g.fillRect(-0.96 * R, -0.2 * R, 1.8 * R, 0.09 * R);
+    g.strokeStyle = 'rgba(255,255,255,0.6)'; g.beginPath(); g.moveTo(-0.46 * R, 0.04 * R); g.lineTo(-0.3 * R, -0.2 * R); g.stroke();
+    g.strokeStyle = '#d8d2c4'; g.lineWidth = ol * 1.2; // earpiece
+    g.beginPath(); g.moveTo(-1.0 * R, 0.3 * R); g.bezierCurveTo(-1.2 * R, 0.6 * R, -0.9 * R, 0.9 * R, -1.1 * R, 1.3 * R); g.stroke();
   }
 
   function managerHead(g, R, c, e, rig, flat) {
-    const ol = rig.ol, boss = !rig.variant;
+    const ol = rig.ol, boss = !rig.variant, k = { ol, jaw: 1.14, chin: 0.24, wide: 0.94, eye: 0.78, eyeY: 0, brow: 0.1, noseT: 'wide', noseS: 0.9, mouthY: 0.74 };
     if (boss) { // headband tails
       const w = sin(rig.t * 7) * 0.12 + rig.hair.x * 0.05;
-      g.strokeStyle = c.out; g.lineCap = 'round';
+      g.lineCap = 'round';
       for (let i = 0; i < 2; i++) {
-        const y1 = (-0.2 + i * 0.34 + w) * R;
-        g.strokeStyle = c.out; g.lineWidth = 0.2 * R + ol * 2; g.beginPath(); g.moveTo(-0.8 * R, -0.52 * R); g.quadraticCurveTo(-1.2 * R, -0.5 * R, -1.6 * R, y1); g.stroke();
-        g.strokeStyle = c.band; g.lineWidth = 0.2 * R; g.beginPath(); g.moveTo(-0.8 * R, -0.52 * R); g.quadraticCurveTo(-1.2 * R, -0.5 * R, -1.6 * R, y1); g.stroke();
+        const y1 = (-0.1 + i * 0.4 + w) * R;
+        g.strokeStyle = c.out; g.lineWidth = 0.2 * R + ol * 2; g.beginPath(); g.moveTo(-0.9 * R, -0.52 * R); g.quadraticCurveTo(-1.4 * R, -0.5 * R, -1.9 * R, y1); g.stroke();
+        g.strokeStyle = c.band; g.lineWidth = 0.2 * R; g.beginPath(); g.moveTo(-0.9 * R, -0.52 * R); g.quadraticCurveTo(-1.4 * R, -0.5 * R, -1.9 * R, y1); g.stroke();
       }
       g.lineCap = 'butt';
     }
-    skull(g, R, c, { ol, jaw: 1.1, nose: 1.07 });
-    cap(g, R, c, ol, c.hair, { front: 0.8, line: -0.56, puff: boss ? 0.06 : 0 });
-    ear(g, R, c, { ol });
+    skull(g, R, c, k);
+    hairCap(g, R, c, ol, c.hair, { line: -0.5, vol: boss ? 0.1 : 0.04, wide: 0.94 });
     if (boss) {
       g.fillStyle = c.band; g.strokeStyle = c.out; g.lineWidth = ol * 1.4;
-      g.beginPath(); g.moveTo(0.86 * R, -0.62 * R); g.quadraticCurveTo(0, -0.82 * R, -0.86 * R, -0.62 * R); g.lineTo(-0.87 * R, -0.42 * R); g.quadraticCurveTo(0, -0.6 * R, 0.89 * R, -0.42 * R); g.closePath(); g.stroke(); g.fill();
+      g.beginPath(); g.moveTo(0.88 * R, -0.66 * R); g.quadraticCurveTo(0, -0.84 * R, -0.9 * R, -0.66 * R); g.lineTo(-0.9 * R, -0.44 * R); g.quadraticCurveTo(0, -0.62 * R, 0.88 * R, -0.44 * R); g.closePath(); g.stroke(); g.fill();
     }
     if (flat) return;
-    features(g, R, c, e, { ol, eye: 0.76, eyeY: -0.02, brow: 0.09, jaw: 1.1, mouthY: 0.7 });
-    if (boss) { g.strokeStyle = c.hair; g.lineWidth = 0.07 * R; g.lineCap = 'round'; g.beginPath(); g.moveTo(0.3 * R, 0.6 * R); g.quadraticCurveTo(0.56 * R, 0.52 * R, 0.8 * R, 0.6 * R); g.stroke(); g.lineCap = 'butt'; }
+    features(g, R, c, e, k);
+    if (boss) { g.strokeStyle = c.hair; g.lineWidth = 0.08 * R; g.lineCap = 'round'; g.beginPath(); g.moveTo(-0.12 * R, 0.68 * R); g.quadraticCurveTo(0.16 * R, 0.58 * R, 0.44 * R, 0.68 * R); g.stroke(); g.lineCap = 'butt'; }
   }
 
-  const CRAB_BEARD = [[0.5, 0.9, 0.3], [0.2, 1.02, 0.34], [-0.16, 0.94, 0.32], [-0.46, 0.68, 0.3], [0.74, 0.7, 0.2], [-0.62, 0.4, 0.2]];
+  const BEARD = [[-0.72, 0.52, 0.26], [-0.52, 0.82, 0.28], [-0.18, 1.0, 0.3], [0.2, 1.06, 0.3], [0.54, 0.94, 0.28], [0.76, 0.6, 0.24]];
   function crabHead(g, R, c, e, rig, flat) {
-    const ol = rig.ol;
-    skull(g, R, c, { ol, jaw: 1.06, nose: 1.14 });
-    lobes(g, CRAB_BEARD, R, 0, 0, c.out, ol); lobes(g, CRAB_BEARD, R, 0, 0, c.hair, 0);
-    ear(g, R, c, { ol });
+    const ol = rig.ol, k = { ol, jaw: 1.1, chin: 0.3, eye: 0.78, eyeY: -0.02, brow: 0.15, browCol: 'hair', noseT: 'wide', noseS: 1.3, mouthY: 0.72 };
+    skull(g, R, c, k);
+    tuft(g, BEARD, R, c, ol, c.hair);
     if (!flat) {
-      wrinkles(g, R, c, ol, 1.06);
-      const eF = rig._eF || (rig._eF = {}); Object.assign(eF, e, { lid: e.lid >= 0.95 ? 1 : 0.66 });
-      features(g, R, c, e, { ol, eye: 0.78, eyeY: -0.02, brow: 0.13, jaw: 1.06, mouthY: 0.66, eF });
+      const eF = rig._eF || (rig._eF = {}); Object.assign(eF, e, { lid: e.lid >= 0.95 ? 1 : 0.62 });
+      k.eF = eF;
+      features(g, R, c, e, k);
     }
-    // flat cap
-    g.fillStyle = c.hat; g.strokeStyle = c.out; g.lineWidth = ol * 2;
-    g.beginPath(); g.moveTo(-0.92 * R, -0.5 * R); g.bezierCurveTo(-0.9 * R, -1.3 * R, 0.6 * R, -1.34 * R, 0.92 * R, -0.66 * R);
-    g.lineTo(1.3 * R, -0.5 * R); g.quadraticCurveTo(1.0 * R, -0.42 * R, 0.8 * R, -0.5 * R); g.quadraticCurveTo(0, -0.7 * R, -0.92 * R, -0.5 * R); g.closePath(); g.stroke(); g.fill();
+    g.fillStyle = c.hat; g.strokeStyle = c.out; g.lineWidth = ol * 2; // flat cap
+    g.beginPath(); g.moveTo(-0.98 * R, -0.42 * R); g.bezierCurveTo(-1.02 * R, -1.32 * R, 0.9 * R, -1.36 * R, 0.96 * R, -0.58 * R);
+    g.lineTo(1.36 * R, -0.42 * R); g.quadraticCurveTo(0.7 * R, -0.34 * R, 0.2 * R, -0.5 * R); g.quadraticCurveTo(-0.4 * R, -0.62 * R, -0.98 * R, -0.42 * R); g.closePath(); g.stroke(); g.fill();
   }
 
-  const BUN = [[-0.52, -1.24, 0.44], [-0.2, -1.42, 0.2]];
+  const BUN = [[-0.1, -1.36, 0.44], [0.2, -1.5, 0.2]];
   function gripeHead(g, R, c, e, rig, flat) {
-    const ol = rig.ol;
-    lobes(g, BUN, R, rig.hair.x * 0.4, 0, c.out, ol); lobes(g, BUN, R, rig.hair.x * 0.4, 0, c.hair, 0);
-    skull(g, R, c, { ol, jaw: 1.04, nose: 1.07 });
-    cap(g, R, c, ol, c.hair, { front: 0.74, line: -0.6, puff: 0.03 });
-    ear(g, R, c, { ol });
+    const ol = rig.ol, k = { ol, jaw: 1.14, chin: 0.18, wide: 0.9, eye: 0.78, eyeY: -0.02, brow: 0.05, noseT: 'wide', noseS: 0.9, mouthY: 0.72, mouthW: 0.8 };
+    tuft(g, BUN, R, c, ol, c.hair);
+    skull(g, R, c, k);
+    hairCap(g, R, c, ol, c.hair, { line: -0.58, vol: 0.04, wide: 0.9 });
     if (flat) return;
-    g.fillStyle = '#d9b34a'; circ(g, -0.46 * R, 0.5 * R, 0.09 * R); g.fill();
-    wrinkles(g, R, c, ol, 1.04);
-    g.fillStyle = 'rgba(110,60,130,0.45)'; // eyeshadow
-    g.beginPath(); g.ellipse(0.19 * R, -0.2 * R, 0.24 * R, 0.12 * R, 0, 0, TAU); g.fill();
-    features(g, R, c, e, { ol, eye: 0.78, eyeY: -0.02, brow: 0.05, jaw: 1.04, mouthY: 0.68, mouthW: 0.8 });
-    glasses(g, R, c, ol, '#d9b34a', null, -0.0);
+    g.fillStyle = '#d9b34a'; circ(g, -0.9 * R, 0.46 * R, 0.1 * R); g.fill();
+    wrinkles(g, R, c, ol, 1.14);
+    g.fillStyle = 'rgba(110,60,130,0.5)'; // eyeshadow
+    g.beginPath(); g.ellipse(-0.22 * R, -0.2 * R, 0.26 * R, 0.12 * R, 0, 0, TAU); g.fill(); g.beginPath(); g.ellipse(0.5 * R, -0.2 * R, 0.22 * R, 0.12 * R, 0, 0, TAU); g.fill();
+    features(g, R, c, e, k);
+    specs(g, R, c, ol, '#d9b34a', -0.02, 0.27);
   }
 
-  const STACHE = [[0.5, 0.54, 0.2], [0.74, 0.6, 0.16], [0.28, 0.6, 0.2], [0.1, 0.7, 0.14]];
+  const STACHE = [[-0.1, 0.62, 0.2], [0.16, 0.58, 0.2], [0.42, 0.62, 0.2], [-0.32, 0.7, 0.15], [0.62, 0.7, 0.15]];
   function pistHead(g, R, c, e, rig, flat) {
-    const ol = rig.ol;
-    g.save(); g.scale(1.1, 1.04);
-    skull(g, R, c, { ol, jaw: 1.14, nose: 1.12 });
-    lobes(g, [[-0.8, 0.0, 0.2], [-0.74, 0.3, 0.18]], R, 0, 0, c.hair, 0);
-    ear(g, R, c, { ol });
+    const ol = rig.ol, k = { ol, jaw: 1.12, chin: 0.4, ear: 1.1, eye: 0.74, eyeY: -0.04, brow: 0.18, browCol: 'hair', noseT: 'wide', noseS: 1.3, noseY: 0.4, mouthY: 0.8 };
+    g.save(); g.scale(1.12, 1.0);
+    lobes(g, [[0.94, -0.2, 0.16]], R, 0, 0, c.hairS, 0);
+    skull(g, R, c, k);
+    lobes(g, [[-1.0, -0.26, 0.2], [-1.02, -0.04, 0.16]], R, 0, 0, c.hair, 0);
     if (!flat) {
-      wrinkles(g, R, c, ol, 1.14);
-      features(g, R, c, e, { ol, eye: 0.72, eyeY: -0.04, brow: 0.16, jaw: 1.14, mouthY: 0.72 });
-      lobes(g, STACHE, R, 0, 0, c.out, ol * 0.8); lobes(g, STACHE, R, 0, 0, c.hair, 0);
+      wrinkles(g, R, c, ol, 1.12);
+      features(g, R, c, e, k);
+      tuft(g, STACHE, R, c, ol * 0.8, c.hair);
     }
     g.restore();
   }
@@ -336,30 +358,34 @@
     huey: {
       name: 'Huey', full: 'Huey Freeman', color: '#b3262d', voice: 1.18,
       build: 'kid', idle: 'stand', portraitPose: 'armsCrossed', face: { lid: 0.2, tilt: 0.36, mouth: 'frown' },
-      sleeve: 'long', hem: 9, sock: 'sock',
-      colors: { skin: '#9a6644', hair: '#1d1613', hairHi: '#4a3a32', shirt: '#7c2026', shirt2: '#4d1115', pants: '#303b55', shoe: '#17171b', sock: '#ece6d6', eye: EYE, iris: '#6a3d1c' },
+      sleeve: 'long', hem: 10, sole: 'sock',
+      colors: { skin: '#a06c48', hair: '#1d1613', hairHi: '#4d3c33', shirt: '#7c2026', shirt2: '#4d1115', pants: '#3b4a6b', shoe: '#1c1c22', sock: '#ece6d6', eye: EYE, iris: '#4a2416' },
       keep: [],
       head: hueyHead,
       outfit(g, L, ws, ww, hem, c) {
         g.strokeStyle = c.shirt2; g.lineWidth = 1.5;
         g.beginPath(); g.moveTo(ws * 0.44, -L); g.quadraticCurveTo(ws * 0.54, -L * 0.5, ws * 0.48, hem + 2); g.stroke();
-        g.lineWidth = 2; g.lineCap = 'round';
-        for (let i = 0; i < 3; i++) { const y = -L * (0.76 - i * 0.26); g.beginPath(); g.moveTo(ws * 0.2, y); g.lineTo(ws * 0.74, y); g.stroke(); }
-        g.lineCap = 'butt';
+        g.fillStyle = c.shirt2;
+        for (let i = 0; i < 4; i++) { circ(g, ws * 0.47, -L * (0.74 - i * 0.22), 1.5); g.fill(); }
       },
-      over(g, L, ws, ww, hem, c, r) {
-        g.fillStyle = c.shirt2; g.strokeStyle = c.out; g.lineWidth = r.ol * 1.6;
-        g.beginPath(); g.roundRect(-ws * 0.34, -L - 5.5, ws * 1.0, 6.5, 2.5); g.stroke(); g.fill();
+      over(g, L, ws, ww, hem, c, r) { // shirt collar
+        g.fillStyle = c.shirtS; g.strokeStyle = c.out; g.lineWidth = r.ol * 1.6; g.lineJoin = 'round';
+        g.beginPath(); g.moveTo(ws * 0.12, -L - 4.5); g.lineTo(ws * 0.46, -L + 6); g.lineTo(-ws * 0.34, -L + 2.5); g.closePath(); g.stroke(); g.fill();
+        g.beginPath(); g.moveTo(ws * 0.5, -L - 4.5); g.lineTo(ws * 0.5, -L + 7); g.lineTo(ws * 1.02, -L + 1.5); g.closePath(); g.stroke(); g.fill();
       },
     },
     riley: {
       name: 'Riley', full: 'Riley Freeman', color: '#2e6fd0', voice: 1.5,
       build: 'kid', scale: 0.94, idle: 'stand', portraitPose: 'lean', face: { lid: 0.16, tilt: 0.2, mouth: 'smirk' },
-      sleeve: 'short', hem: 15, baggy: 1.7, wrist: 'accent', sole: 'accent',
+      sleeve: 'none', hem: 14, baggy: 1.7, wrist: 'accent', sole: 'accent',
       dims: (b) => ({ wWaist: b.wWaist + 5, wShoulder: b.wShoulder + 2 }),
-      colors: { skin: '#96633f', hair: '#17110e', shirt: '#f1ede3', gold: '#e2b93f', pants: '#3d629b', shoe: '#f5f2ea', accent: '#c7352e', eye: EYE, iris: '#6a3d1c' },
+      colors: { skin: '#9c6843', hair: '#17110e', shirt: '#f1ede3', gold: '#e2b93f', pants: '#3d629b', shoe: '#f5f2ea', accent: '#c7352e', eye: EYE, iris: '#6a3d1c' },
       head: rileyHead,
-      outfit(g, L, ws, ww, hem, c) {
+      outfit(g, L, ws, ww, hem, c) { // tank top: scoop neck and armholes show skin
+        g.fillStyle = c.skin;
+        g.beginPath(); g.ellipse(ws * 0.36, -L - 3, ws * 0.44, 8, 0, 0, TAU); g.fill();
+        g.beginPath(); g.ellipse(-ws * 1.0, -L * 0.84, ws * 0.36, L * 0.2, 0, 0, TAU); g.fill();
+        g.beginPath(); g.ellipse(ws * 1.1, -L * 0.82, ws * 0.28, L * 0.18, 0, 0, TAU); g.fill();
         g.strokeStyle = c.gold; g.lineWidth = 1.7;
         g.beginPath(); g.moveTo(-ws * 0.1, -L - 2); g.quadraticCurveTo(ws * 0.3, -L * 0.5, ws * 0.78, -L - 1); g.stroke();
         g.fillStyle = c.gold; g.beginPath(); g.roundRect(ws * 0.2, -L * 0.72, 5, 6, 1.2); g.fill();
@@ -452,6 +478,21 @@
         g.strokeStyle = c.shirtS; g.lineWidth = 2;
         g.beginPath(); g.moveTo(ws * 0.86, -L - 2); g.lineTo(ws * 0.06, -L * 0.42); g.moveTo(ws * 0.04, -L - 2); g.lineTo(ws * 0.5, -L * 0.62); g.stroke();
         g.fillStyle = c.sash; g.fillRect(-ws - 8, -L * 0.26, ws * 2 + 30, 8);
+      },
+    },
+    slick: {
+      name: 'A Pimp Named Slickback', full: 'A Pimp Named Slickback', color: '#6a2c91', voice: 1.05,
+      build: 'adult', scale: 1.0, idle: 'caneLean', prop: 'cane', portraitPose: 'stand', face: { lid: 0.36, tilt: 0.2, brow: 0.2, mouth: 'smirk' },
+      sleeve: 'long', hem: 14, cuff: 'shirt2',
+      dims: (b) => ({ wShoulder: b.wShoulder - 2, wWaist: b.wWaist - 3 }),
+      colors: { skin: '#a8754e', hair: '#1a1310', hairHi: '#5a463a', shirt: '#6a2c91', shirt2: '#e8c33a', gold: '#f2d15a', pants: '#6a2c91', shoe: '#f2f0ea', hat: '#6a2c91', band: '#e8c33a', feather: '#3fb86a', wood: '#f2f0ea', eye: EYE, iris: '#4a2416' },
+      head: slickHead,
+      outfit(g, L, ws, ww, hem, c) {
+        suitFront(g, L, ws, c, null);
+        g.strokeStyle = c.gold; g.lineWidth = 2.2; // the chain
+        g.beginPath(); g.moveTo(ws * 0.2, -L - 2); g.quadraticCurveTo(ws * 0.46, -L * 0.52, ws * 0.76, -L - 1); g.stroke();
+        g.fillStyle = c.gold; circ(g, ws * 0.47, -L * 0.66, 3); g.fill();
+        g.fillStyle = c.shirt2; g.fillRect(-ws * 0.3, -L * 0.74, 7, 4); // pocket square
       },
     },
     guest: {

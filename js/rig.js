@@ -164,145 +164,156 @@
   });
 
   /* ------------------------------------------------------------- face kit */
-  function skull(g, R, c, k) {
-    const j = k.jaw || 1, n = k.nose || 1;
-    g.fillStyle = c.skin; g.strokeStyle = c.out; g.lineWidth = k.ol * 2; g.lineJoin = 'round';
+  /*
+   * Heads are drawn three-quarter FRONT, the show's default angle: both eyes large and readable,
+   * the face turned slightly toward +x. Units are head radii (R); k carries per-character tuning:
+   * { ol, jaw, wide, chin, eye, eyeY, brow, browCol, noseT, noseS, noseY, mouthY, mouthW, eN, eF, noEyes }
+   */
+  function facePath(g, R, k) {
+    const j = k.jaw || 1, w = k.wide || 1, ch = k.chin === undefined ? 0.17 : k.chin;
     g.beginPath();
-    g.moveTo(-0.8 * R, -0.3 * R);
-    g.bezierCurveTo(-0.84 * R, -1.08 * R, 0.78 * R, -1.12 * R, 0.88 * R, -0.3 * R);
-    g.bezierCurveTo(0.9 * R, -0.1 * R, 0.87 * R, 0.04 * R, 0.9 * R, 0.14 * R);
-    g.quadraticCurveTo(n * R + 0.02 * R, 0.33 * R, 0.87 * R, 0.43 * R);
-    g.bezierCurveTo(0.9 * R, 0.56 * R * j, 0.83 * R, 0.7 * R * j, 0.7 * R, 0.8 * R * j);
-    g.bezierCurveTo(0.56 * R, 0.95 * R * j, 0.36 * R, 1.04 * R * j, 0.1 * R, 1.0 * R * j);
-    g.bezierCurveTo(-0.32 * R, 0.97 * R * j, -0.66 * R, 0.68 * R * j, -0.76 * R, 0.26 * R);
+    g.moveTo(-0.92 * R * w, -0.15 * R);
+    g.bezierCurveTo(-0.96 * R * w, -1.1 * R, 0.94 * R * w, -1.12 * R, 0.9 * R * w, -0.15 * R);
+    g.bezierCurveTo(0.9 * R * w, 0.36 * R * j, 0.74 * R * w, 0.82 * R * j, (0.14 + ch) * R, 1.0 * R * j);
+    g.quadraticCurveTo(0.14 * R, 1.07 * R * j, (0.14 - ch) * R, 1.0 * R * j);
+    g.bezierCurveTo(-0.64 * R * w, 0.84 * R * j, -0.9 * R * w, 0.42 * R * j, -0.92 * R * w, -0.15 * R);
     g.closePath();
-    g.stroke(); g.fill();
+  }
+  function skull(g, R, c, k) {
+    const j = k.jaw || 1, w = k.wide || 1, es = k.ear || 1;
+    g.strokeStyle = c.out; g.lineWidth = k.ol * 2; g.lineJoin = 'round';
+    g.fillStyle = c.skinS; // far ear, then the near ear sticking out
+    g.beginPath(); g.ellipse(0.9 * R * w, 0.12 * R, 0.13 * R * es, 0.24 * R * es, 0.1, 0, TAU); g.stroke(); g.fill();
+    g.fillStyle = c.skin;
+    g.beginPath(); g.ellipse(-0.97 * R * w, 0.12 * R, 0.2 * R * es, 0.29 * R * es, -0.12, 0, TAU); g.stroke(); g.fill();
+    g.fillStyle = c.skinS; g.beginPath(); g.ellipse(-0.99 * R * w, 0.13 * R, 0.09 * R * es, 0.16 * R * es, -0.12, 0, TAU); g.fill();
+    facePath(g, R, k);
+    g.fillStyle = c.skin; g.stroke(); g.fill();
     g.save(); g.clip();
     g.fillStyle = c.skinS;
-    g.beginPath();
-    g.moveTo(-R, -1.2 * R); g.lineTo(-0.42 * R, -1.2 * R);
-    g.bezierCurveTo(-0.66 * R, -0.3 * R, -0.6 * R, 0.52 * R * j, 0.02 * R, 1.12 * R * j);
-    g.lineTo(-R, 1.3 * R * j); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(-1.3 * R * w, -1.2 * R); g.lineTo(-0.66 * R * w, -1.2 * R);
+    g.bezierCurveTo(-0.86 * R * w, -0.2 * R, -0.82 * R * w, 0.6 * R * j, -0.12 * R, 1.14 * R * j);
+    g.lineTo(-1.3 * R * w, 1.3 * R * j); g.closePath(); g.fill();
     g.fillStyle = c.skinH;
-    g.beginPath(); g.ellipse(0.44 * R, -0.56 * R, 0.34 * R, 0.14 * R, -0.1, 0, TAU); g.fill();
-    g.beginPath(); g.ellipse(0.6 * R, 0.36 * R, 0.13 * R, 0.09 * R, 0, 0, TAU); g.fill();
+    g.beginPath(); g.ellipse(0.32 * R, -0.52 * R, 0.4 * R, 0.15 * R, 0, 0, TAU); g.fill();
+    g.beginPath(); g.ellipse(0.64 * R * w, 0.46 * R, 0.13 * R, 0.09 * R, 0, 0, TAU); g.fill();
     g.restore();
-    g.strokeStyle = c.skinS; g.lineWidth = k.ol; g.lineCap = 'round';
-    g.beginPath(); g.moveTo(0.72 * R, 0.36 * R); g.quadraticCurveTo(0.78 * R, 0.45 * R, 0.86 * R, 0.43 * R); g.stroke(); g.lineCap = 'butt';
   }
-  function ear(g, R, c, k) {
-    g.fillStyle = c.skin; g.strokeStyle = c.out; g.lineWidth = k.ol * 1.6;
-    g.beginPath(); g.ellipse(-0.47 * R, 0.17 * R, 0.16 * R, 0.24 * R, -0.18, 0, TAU); g.stroke(); g.fill();
-    g.strokeStyle = c.skinS; g.lineWidth = k.ol * 0.8;
-    g.beginPath(); g.arc(-0.45 * R, 0.18 * R, 0.1 * R, 1.9, 4.6); g.stroke();
+  function eyePath(g, cx, cy, hw, hh) {
+    g.beginPath();
+    g.moveTo(cx - hw, cy - hh * 0.15);
+    g.quadraticCurveTo(cx - hw * 0.92, cy - hh, cx, cy - hh);
+    g.quadraticCurveTo(cx + hw * 0.92, cy - hh, cx + hw, cy - hh * 0.15);
+    g.quadraticCurveTo(cx + hw * 0.96, cy + hh, cx, cy + hh);
+    g.quadraticCurveTo(cx - hw * 0.96, cy + hh, cx - hw, cy - hh * 0.15);
+    g.closePath();
   }
   function eye(g, cx, cy, w, h, e, c, inner, ol) {
-    const hw = w / 2;
+    const hw = w / 2, hh = h / 2;
     if (e.lid >= 0.95) {
-      g.strokeStyle = c.out; g.lineWidth = ol * 1.1; g.lineCap = 'round';
+      g.strokeStyle = c.out; g.lineWidth = ol * 2.2; g.lineCap = 'round';
       g.beginPath();
       g.moveTo(cx - hw, cy - inner * e.tilt * h * 0.2);
-      g.quadraticCurveTo(cx, cy + h * (e.tilt > 0.4 ? -0.2 : 0.3), cx + hw, cy + inner * e.tilt * h * 0.2);
+      g.quadraticCurveTo(cx, cy + h * (e.tilt > 0.4 ? -0.16 : 0.3), cx + hw, cy + inner * e.tilt * h * 0.2);
       g.stroke(); g.lineCap = 'butt';
       return;
     }
     g.save();
-    g.beginPath();
-    g.moveTo(cx - hw, cy + h * 0.06);
-    g.quadraticCurveTo(cx - hw * 0.15, cy - h * 0.98, cx + hw, cy - h * 0.04);
-    g.quadraticCurveTo(cx + hw * 0.1, cy + h * 0.82, cx - hw, cy + h * 0.06);
-    g.closePath();
+    eyePath(g, cx, cy, hw, hh);
     g.fillStyle = c.eye; g.fill();
     g.clip();
     if (!e.blind) {
-      const ir = h * 0.43 * (e.pupil || 1);
-      const ix = cx + (e.lookX || 0) * hw * 0.4 + inner * hw * 0.12, iy = cy + (e.lookY || 0) * h * 0.25 - h * 0.03;
-      g.fillStyle = c.out; circ(g, ix, iy, ir + ol * 0.5); g.fill();
+      const ir = hh * 0.88 * (e.pupil || 1);
+      const ix = cx + (e.lookX || 0) * hw * 0.35 + inner * hw * 0.14, iy = cy + (e.lookY || 0) * hh * 0.3 + hh * 0.06;
       g.fillStyle = c.iris; circ(g, ix, iy, ir); g.fill();
-      g.fillStyle = '#0c0706'; circ(g, ix, iy, ir * 0.52); g.fill();
-      g.fillStyle = '#ffffff'; circ(g, ix - ir * 0.4, iy - ir * 0.42, ir * 0.3); g.fill();
+      g.fillStyle = '#0c0706'; circ(g, ix, iy, ir * 0.62); g.fill();
+      g.fillStyle = '#ffffff'; circ(g, ix - ir * 0.38, iy - ir * 0.42, ir * 0.3); g.fill();
     }
-    // upper lid
-    const yl = cy - h * 0.66 + h * 1.4 * e.lid;
-    const yi = yl + e.tilt * h * 0.5, yo = yl - e.tilt * h * 0.22;
+    // heavy upper lid: a straight slab, lower toward the nose when angry
+    const yl = cy - hh * 1.3 + h * 1.25 * e.lid;
+    const yi = yl + e.tilt * h * 0.42, yo = yl - e.tilt * h * 0.2;
     const yL = inner > 0 ? yo : yi, yR = inner > 0 ? yi : yo;
-    g.fillStyle = 'rgba(40,20,10,0.16)'; // lid shadow on the eyeball
-    g.beginPath(); g.moveTo(cx - hw - 2, cy - h - 2); g.lineTo(cx + hw + 2, cy - h - 2); g.lineTo(cx + hw + 2, yR + h * 0.14); g.lineTo(cx - hw - 2, yL + h * 0.14); g.closePath(); g.fill();
-    g.fillStyle = c.skin;
+    g.fillStyle = c.skinS;
     g.beginPath(); g.moveTo(cx - hw - 2, cy - h - 2); g.lineTo(cx + hw + 2, cy - h - 2); g.lineTo(cx + hw + 2, yR); g.lineTo(cx - hw - 2, yL); g.closePath(); g.fill();
-    g.strokeStyle = c.out; g.lineWidth = ol * 1.5;
+    g.strokeStyle = c.out; g.lineWidth = ol * 2.6;
     g.beginPath(); g.moveTo(cx - hw - 2, yL); g.lineTo(cx + hw + 2, yR); g.stroke();
     g.restore();
-    g.strokeStyle = c.out; g.lineWidth = ol * 0.9;
-    g.beginPath();
-    g.moveTo(cx - hw, cy + h * 0.06);
-    g.quadraticCurveTo(cx - hw * 0.15, cy - h * 0.98, cx + hw, cy - h * 0.04);
-    g.stroke();
-    g.globalAlpha *= 0.45;
-    g.beginPath();
-    g.moveTo(cx + hw, cy - h * 0.04);
-    g.quadraticCurveTo(cx + hw * 0.1, cy + h * 0.82, cx - hw, cy + h * 0.06);
-    g.stroke();
-    g.globalAlpha /= 0.45;
+    g.strokeStyle = c.out; g.lineWidth = ol * 1.5;
+    eyePath(g, cx, cy, hw, hh); g.stroke();
+  }
+  function nose(g, R, c, k) {
+    const x = 0.17 * R, y = (k.noseY === undefined ? 0.42 : k.noseY) * R, s = (k.noseS || 1) * R;
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    if (k.noseT === 'wide') {
+      g.fillStyle = c.skinS; g.beginPath(); g.ellipse(x, y, 0.22 * s, 0.12 * s, 0, 0, TAU); g.fill();
+      g.fillStyle = c.skinH; g.beginPath(); g.ellipse(x + 0.03 * s, y - 0.1 * s, 0.09 * s, 0.07 * s, 0, 0, TAU); g.fill();
+      g.strokeStyle = c.out; g.lineWidth = k.ol * 1.2;
+      g.beginPath(); g.moveTo(x - 0.2 * s, y + 0.02 * s); g.quadraticCurveTo(x - 0.27 * s, y - 0.12 * s, x - 0.13 * s, y - 0.15 * s);
+      g.moveTo(x + 0.2 * s, y + 0.02 * s); g.quadraticCurveTo(x + 0.27 * s, y - 0.12 * s, x + 0.13 * s, y - 0.15 * s); g.stroke();
+      g.fillStyle = c.out; circ(g, x - 0.09 * s, y + 0.03 * s, 0.04 * s); g.fill(); circ(g, x + 0.1 * s, y + 0.03 * s, 0.04 * s); g.fill();
+    } else {
+      g.strokeStyle = c.out; g.lineWidth = k.ol * 1.2;
+      g.beginPath(); g.moveTo(x + 0.03 * s, y - 0.15 * s); g.lineTo(x + 0.11 * s, y - 0.01 * s); g.lineTo(x - 0.03 * s, y + 0.01 * s); g.stroke();
+    }
+    g.lineCap = 'butt';
   }
   function mouth(g, x, y, w, e, c, ol) {
     const m = e.mouth, op = e.open || 0;
-    g.strokeStyle = c.out; g.lineWidth = ol; g.lineCap = 'round'; g.lineJoin = 'round';
+    g.strokeStyle = c.out; g.lineWidth = ol * 1.2; g.lineCap = 'round'; g.lineJoin = 'round';
     if (op > 0.08 && m !== 'grit') {
       const h = w * (0.16 + 0.5 * op);
       g.fillStyle = '#3b1217';
-      g.beginPath(); g.ellipse(x, y + h * 0.35, w * 0.42, h, 0, 0, TAU); g.stroke(); g.fill();
+      g.beginPath(); g.ellipse(x, y + h * 0.35, w * 0.46, h, 0, 0, TAU); g.stroke(); g.fill();
       g.fillStyle = '#f4eee2';
-      g.beginPath(); g.ellipse(x, y + h * 0.35, w * 0.42, h, 0, PI * 1.14, PI * 1.86); g.closePath(); g.fill();
-      if (op > 0.5) { g.fillStyle = '#b5484c'; g.beginPath(); g.ellipse(x - w * 0.04, y + h * 1.0, w * 0.24, h * 0.36, 0, 0, TAU); g.fill(); }
+      g.beginPath(); g.ellipse(x, y + h * 0.35, w * 0.46, h, 0, PI * 1.14, PI * 1.86); g.closePath(); g.fill();
+      if (op > 0.5) { g.fillStyle = '#b5484c'; g.beginPath(); g.ellipse(x, y + h * 1.0, w * 0.26, h * 0.36, 0, 0, TAU); g.fill(); }
     } else if (m === 'frown') {
-      g.beginPath(); g.moveTo(x - w / 2, y + w * 0.12); g.quadraticCurveTo(x, y - w * 0.14, x + w / 2, y + w * 0.1); g.stroke();
+      g.beginPath(); g.moveTo(x - w / 2, y + w * 0.14); g.quadraticCurveTo(x, y - w * 0.16, x + w / 2, y + w * 0.12); g.stroke();
     } else if (m === 'smirk') {
-      g.beginPath(); g.moveTo(x - w * 0.56, y - w * 0.18); g.quadraticCurveTo(x - w * 0.2, y + w * 0.12, x + w / 2, y + w * 0.02); g.stroke();
-      g.beginPath(); g.moveTo(x - w * 0.62, y - w * 0.3); g.lineTo(x - w * 0.52, y - w * 0.12); g.stroke();
+      g.beginPath(); g.moveTo(x - w * 0.5, y + w * 0.04); g.quadraticCurveTo(x + w * 0.1, y + w * 0.16, x + w * 0.56, y - w * 0.2); g.stroke();
+      g.beginPath(); g.moveTo(x + w * 0.5, y - w * 0.32); g.lineTo(x + w * 0.62, y - w * 0.14); g.stroke();
     } else if (m === 'grin') {
       g.fillStyle = '#f4eee2';
-      g.beginPath(); g.moveTo(x - w * 0.58, y - w * 0.12); g.quadraticCurveTo(x, y + w * 0.06, x + w * 0.52, y - w * 0.06);
-      g.quadraticCurveTo(x, y + w * 0.62, x - w * 0.58, y - w * 0.12); g.closePath(); g.stroke(); g.fill();
+      g.beginPath(); g.moveTo(x - w * 0.58, y - w * 0.1); g.quadraticCurveTo(x, y + w * 0.06, x + w * 0.58, y - w * 0.1);
+      g.quadraticCurveTo(x, y + w * 0.66, x - w * 0.58, y - w * 0.1); g.closePath(); g.stroke(); g.fill();
     } else if (m === 'grit') {
       g.fillStyle = '#f4eee2';
-      g.beginPath(); g.moveTo(x - w * 0.5, y - w * 0.1); g.lineTo(x + w * 0.5, y - w * 0.14); g.lineTo(x + w * 0.46, y + w * 0.2); g.lineTo(x - w * 0.46, y + w * 0.22); g.closePath(); g.stroke(); g.fill();
-      g.lineWidth = ol * 0.6;
-      g.beginPath(); g.moveTo(x - w * 0.48, y + w * 0.05); g.lineTo(x + w * 0.48, y + w * 0.03);
-      for (let i = -1; i <= 1; i++) { g.moveTo(x + i * w * 0.22, y - w * 0.12); g.lineTo(x + i * w * 0.22, y + w * 0.2); }
+      g.beginPath(); g.moveTo(x - w * 0.52, y - w * 0.12); g.lineTo(x + w * 0.52, y - w * 0.12); g.lineTo(x + w * 0.46, y + w * 0.22); g.lineTo(x - w * 0.46, y + w * 0.22); g.closePath(); g.stroke(); g.fill();
+      g.lineWidth = ol * 0.7;
+      g.beginPath(); g.moveTo(x - w * 0.5, y + w * 0.05); g.lineTo(x + w * 0.5, y + w * 0.05);
+      for (let i = -1; i <= 1; i++) { g.moveTo(x + i * w * 0.24, y - w * 0.12); g.lineTo(x + i * w * 0.24, y + w * 0.22); }
       g.stroke();
     } else if (m === 'o') {
-      g.fillStyle = '#3b1217'; g.beginPath(); g.ellipse(x + w * 0.1, y + w * 0.1, w * 0.2, w * 0.27, 0, 0, TAU); g.stroke(); g.fill();
+      g.fillStyle = '#3b1217'; g.beginPath(); g.ellipse(x, y + w * 0.1, w * 0.22, w * 0.3, 0, 0, TAU); g.stroke(); g.fill();
     } else {
       g.beginPath(); g.moveTo(x - w / 2, y + w * 0.02); g.quadraticCurveTo(x, y - w * 0.03, x + w / 2, y + w * 0.03); g.stroke();
     }
     g.lineCap = 'butt';
   }
-  /** eyes + brows + mouth. k: { ol, eye, eyeY, brow, mouthY, mouthW, jaw, browCol } */
   function features(g, R, c, e, k) {
-    const es = k.eye || 1, ey = (k.eyeY === undefined ? 0.06 : k.eyeY) * R;
-    const nw = 0.56 * R * es, nh = 0.5 * R * es, fw = 0.31 * R * es, fh = 0.47 * R * es;
-    const nx = 0.19 * R, fx = 0.67 * R;
+    const es = k.eye || 1, ey = (k.eyeY === undefined ? 0.1 : k.eyeY) * R, j = k.jaw || 1;
+    const nx = -0.22 * R, fx = 0.5 * R;
+    const nw = 0.6 * R * es, nh = 0.52 * R * es, fw = 0.5 * R * es, fh = 0.5 * R * es;
     if (!k.noEyes) {
       eye(g, nx, ey, nw, nh, k.eN || e, c, 1, k.ol);
       eye(g, fx, ey, fw, fh, k.eF || e, c, -1, k.ol);
     }
-    const bt = (k.brow || 0.1) * R, by = ey - nh * 0.84 - e.brow * 0.15 * R - 0.05 * R;
+    const bt = (k.brow || 0.13) * R, by = ey - nh * 0.5 - 0.13 * R - e.brow * 0.16 * R;
     g.strokeStyle = c[k.browCol || 'hair']; g.lineWidth = bt; g.lineCap = 'round';
-    g.beginPath(); g.moveTo(nx - nw * 0.62, by - e.tilt * 0.06 * R);
-    g.quadraticCurveTo(nx, by - 0.06 * R, nx + nw * 0.56, by + e.tilt * 0.22 * R); g.stroke();
-    g.beginPath(); g.moveTo(fx + fw * 0.62, by - e.tilt * 0.04 * R); g.lineTo(fx - fw * 0.5, by + e.tilt * 0.22 * R); g.stroke();
+    g.beginPath(); g.moveTo(nx - nw * 0.56, by - e.tilt * 0.1 * R); g.quadraticCurveTo(nx, by - 0.06 * R, nx + nw * 0.54, by + e.tilt * 0.2 * R); g.stroke();
+    g.beginPath(); g.moveTo(fx + fw * 0.56, by - e.tilt * 0.1 * R); g.quadraticCurveTo(fx, by - 0.06 * R, fx - fw * 0.54, by + e.tilt * 0.2 * R); g.stroke();
     g.lineCap = 'butt';
-    mouth(g, 0.5 * R, (k.mouthY === undefined ? 0.68 : k.mouthY) * R * (k.jaw || 1), 0.4 * R * (k.mouthW || 1), e, c, k.ol);
+    nose(g, R, c, k);
+    mouth(g, 0.16 * R, (k.mouthY === undefined ? 0.7 : k.mouthY) * R * j, 0.42 * R * (k.mouthW || 1), e, c, k.ol);
   }
-  BD.Face = { skull, ear, eye, mouth, features, lobes, circ, capsule };
+  BD.Face = { skull, facePath, eye, nose, mouth, features, lobes, circ, capsule };
 
   /* --------------------------------------------------------------- builds */
   const BUILDS = {
-    kid: { thigh: 27, shin: 27, torso: 38, neck: 3, head: 19, uArm: 19, lArm: 18, hand: 5.2,
+    kid: { thigh: 26, shin: 26, torso: 36, neck: 3, head: 22, uArm: 19, lArm: 18, hand: 5.2,
       rThigh: 8.2, rKnee: 6.4, rAnkle: 4.8, rShoulder: 6.2, rElbow: 5, rWrist: 4.2,
       wShoulder: 27, wWaist: 21, foot: 15, footH: 6.5, hipGap: 3.6, shGap: 5, ol: 1.25 },
-    adult: { thigh: 46, shin: 44, torso: 60, neck: 6, head: 21, uArm: 32, lArm: 30, hand: 7,
+    adult: { thigh: 46, shin: 44, torso: 60, neck: 6, head: 23, uArm: 32, lArm: 30, hand: 7,
       rThigh: 11.5, rKnee: 8.6, rAnkle: 6, rShoulder: 8.6, rElbow: 6.8, rWrist: 5.5,
       wShoulder: 40, wWaist: 30, foot: 23, footH: 8.5, hipGap: 5.5, shGap: 8, ol: 1.4 },
   };

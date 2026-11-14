@@ -263,7 +263,7 @@
   // The game is drawn into a fixed 480x270 framebuffer and scaled up with hard pixels.
   function resize() {
     const fit = Math.min(innerWidth / BD.FBW, innerHeight / BD.FBH);
-    const s = fit >= 2 ? Math.floor(fit) : fit;
+    const s = fit >= 1.5 ? Math.floor(fit * 2) / 2 : fit;   // half steps stay on whole device pixels on hi-dpi screens
     canvas.style.width = Math.round(BD.FBW * s) + 'px';
     canvas.style.height = Math.round(BD.FBH * s) + 'px';
     BD.uiScale = s;
