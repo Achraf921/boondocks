@@ -49,7 +49,7 @@
       yield* w.say('huey', 'Which lunch counter?', 'deadpan');
       yield* w.say('granddad', 'The one with the... counter. Don\'t you cross-examine a veteran of the movement.', 'scowl');
       yield* w.say('jazmine', 'My daddy gave me thirteen dollars for my ticket! He said to keep the receipt for his taxes!', 'grin');
-      yield* w.say('granddad', 'THIRTEEN DOLLARS? To watch {ns} fall down on a airplane? I can see that for free at the family reunion.', 'shock');
+      yield* w.say('granddad', 'THIRTEEN DOLLARS? To watch {ns} fall down on a airplane? I can see that shit for free at the family reunion.', 'shock');
       gd.rig.setPose('pointUp', 12);
       yield* w.say('granddad', 'No sir. We ain\'t paying. We going in the way my generation went in everywhere: without asking.', 'scowl');
       yield* w.say('huey', 'That\'s called theft.', 'deadpan');
@@ -57,7 +57,7 @@
       jz.rig.setPose('cower', 12);
       yield* w.say('jazmine', 'But that\'s against the LAW! They\'ll put us in jail! I\'m too little for jail! I still use safety scissors!', 'worry');
       ri.rig.setPose('lean', 12);
-      yield* w.say('riley', 'Ain\'t no jail. It\'s a heist. I seen like nine heist movies. Somebody always die, but it\'s usually the nervous one.', 'smirk');
+      yield* w.say('riley', 'Ain\'t no jail. It\'s a heist. I seen like nine heist movies. Somebody always get caught, but it\'s usually the nervous one.', 'smirk');
       yield* w.say('jazmine', 'I\'M the nervous one!', 'shock');
       yield* w.fadeOut(0.3);
       gd.gone = ri.gone = jz.gone = true;
@@ -257,8 +257,120 @@
       yield* w.fadeOut(0.4);
       S.end(); w.cine(false);
     },
-    /*MORE*/
-    ],
-    *outro(w) { yield* w.narr('...'); },
+    function* (w) {                                /* 5. screen four: the Night Manager, with an audience */
+      const S = stage(w), p = w.player;
+      w.setBg('theater'); w.music('duel', 0.4); w.place(450, 1); w.noFight = false; w.alert = 0; w.zoom = 1.3;
+      w.minX = 250; w.maxX = 1250;
+      const ri = w.npc('riley', 70, { face: 1, pose: 'cheer', idle: 'cheer', expr: 'grin', z: -1 }), jz = w.npc('jazmine', 135, { face: 1, pose: 'cower', idle: 'cower', expr: 'worry', z: -1 });
+      const gd = w.npc('granddad', 200, { face: 1, pose: 'armsCrossed', idle: 'armsCrossed', z: -1 });
+      const c1 = w.npc('guest', 1310, { face: -1, pose: 'armsCrossed', z: -1 }), c2 = w.npc('tux', 1400, { face: -1, variant: 1, z: -1 });
+      yield* w.fadeIn(0.4);
+      if (!w.flags.met) {
+        w.flags.met = true;
+        const m0 = w.npc('manager', 1620, { face: -1, prop: 'nunchaku', pose: 'stance', idle: 'stance' });
+        w.cine(true); w.look(620, 1.25); p.face = -1;
+        yield* w.narr('"Soul Jet 2" opens with a man in a dress falling down the stairs of an airplane for nine minutes. The audience wept. So did I, for different reasons.');
+        yield* w.say('riley', 'HA! He fell AGAIN! Same stairs! This is CINEMA!', 'grin');
+        yield* w.say('granddad', 'Pass the chicken. And scoot over, my feet soaking.', 'grin');
+        yield* w.say('huey', 'We\'re leaving. All of us. Right now. This movie is a crime scene.', 'scowl');
+        A().sfx('alert'); p.face = 1; w.look(820, 1.3);
+        yield* w.walk(m0, 1050, 320, 'run');
+        yield* w.say('manager', 'Screen four. Row F. Four seats nobody paid for, one whole chicken, and a foot bath. Do you know how long I have waited for this? I have a laminated plan.', 'angry');
+        yield* w.say('manager', 'I am the Night Manager. I was a stuntman once. I fell down stairs for a living. Then they gave my part to a man in a dress.', 'scowl');
+        yield* w.say('granddad', 'Huey! Handle that! And keep it down, I\'m at a good part!', 'scowl');
+        yield* w.say('huey', 'There are no good parts.', 'deadpan');
+        yield* w.say('manager', 'Our policy on outside food... is VIOLENCE.', 'shout');
+        m0.gone = true;
+        w.cine(false);
+      }
+      const b = w.foe('manager', 1050, { hp: 230, boss: true, ai: L.managerAI, prop: 'nunchaku', title: 'FELL DOWN STAIRS FOR A LIVING', speed: 230, idle: 'stance', block: 0.4 });
+      const crowd = [
+        [c1, 'DOWN IN FRONT!'], [gd, 'Fight QUIETER! I can\'t hear the plane!'], [ri, 'Hit him with his own chucks!'],
+        [c2, 'Is this part of the movie? It\'s better than the movie.'], [jz, 'We\'re sorry! We\'re so sorry! Have a wing!'],
+        [b, 'I did my own stunts in "Fist Airport"!'], [c1, 'Kick him on the LEFT, kid! I can\'t see!'],
+        [gd, 'Jazmine, pass the hot sauce. The emergency one.'], [ri, 'Somebody film this! That\'s my brother! Kinda!'],
+        [b, 'This beating has a two-drink minimum!'], [jz, 'Is this jail? Is this what jail is like?'],
+      ];
+      S.add(w.also((function* () {
+        for (let i = 0; ; i++) { const [f, s] = crowd[i % crowd.length]; if (!f.dead && !f.gone) w.bubble(f, s); yield U.rand(2.6, 3.6); }
+      })()));
+      yield* w.duel(b, { banner: 'SHOWTIME!', ko: 'NO REFUNDS.' });
+      w.bubble(c2, 'Two thumbs up for the small angry one!');
+      yield 1.4;
+      yield* w.fadeOut(0.4);
+      S.end();
+    }, function* (w) {                             /* 6. thrown out: a refund for tickets nobody bought */
+      const S = stage(w), p = w.player;
+      w.setBg('lobby'); w.music('stealth', 0.15); w.place(1250, -1); w.noFight = true; w.zoom = 1.3; w.alert = 0;
+      const gd = w.npc('granddad', 1130, { face: -1, pose: 'handsHips' }), ri = w.npc('riley', 1050, { face: -1, pose: 'lean' }), jz = w.npc('jazmine', 970, { face: -1, expr: 'worry' });
+      const ru = w.npc('ruckus', 1400, { variant: 1, face: -1, prop: 'flashlight', pose: 'flashlight', idle: 'flashlight', expr: 'grin' });
+      const mg = w.npc('manager', 350, { face: 1, pose: 'stagger', expr: 'pain' });
+      yield* w.fadeIn(0.4);
+      S.add(w.follow(ru, 130));
+      const walks = [S.add(w.also(w.walk(gd, 520, 210, 'walk'))), S.add(w.also(w.walk(ri, 450, 230, 'walk'))), S.add(w.also(w.walk(jz, 590, 200, 'walk')))];
+      const nag = S.add(w.also((function* () {
+        yield () => p.x < 1180 && !w.cineOn; w.bubble(ru, 'Keep it movin\'! Left, right, left, FREELOADERS!'); yield 1.7;
+        yield () => p.x < 960 && !w.cineOn; w.bubble(gd, 'Get that flashlight out my back!'); yield 1.7;
+        yield () => p.x < 780 && !w.cineOn; w.bubble(ru, 'Banned! All y\'all! Banned for LIFE!'); yield 1.7;
+      })()));
+      yield* w.goTo(660, 'GET THROWN OUT WITH DIGNITY');
+      if (AUTO()) yield () => nag.done;
+      for (const c of walks) c.stop();
+      w.cine(true); w.look(520, 1.35); p.face = -1;
+      gd.x = 520; ri.x = 450; jz.x = 590; gd.face = ri.face = jz.face = -1;
+      gd.rig.setPose('point', 12); ri.rig.setPose('lean', 12); jz.rig.setPose('stand', 12);
+      yield* w.say('ruckus', 'And STAY out! I\'m puttin\' all four of your pictures up by the register. Right next to the fella who brought a live fish.', 'grin');
+      yield* w.say('granddad', 'Fine by me! That movie was some bullshit. I want my money back.', 'scowl');
+      yield* w.say('manager', 'Sir. You did not buy tickets.', 'pain');
+      yield* w.say('granddad', 'I paid with my TIME. I paid with my DIGNITY. That man fell down them stairs nine times and not once did I feel represented!', 'shout');
+      yield* w.say('manager', 'I cannot refund a ticket that does not exist.', 'pain');
+      yield* w.say('granddad', 'And whose fault is that? Thirteen dollars! You PRICED me into a life of crime!', 'angry');
+      const a = yield* w.choice('huey', 'BACK GRANDDAD UP?', ['He has a point about the price.', 'I\'d like to return the movie. Barely used.', 'Refund us for the first Soul Jet too.']);
+      if (a === 0) {
+        yield* w.say('huey', 'He does have a point about the price.', 'deadpan');
+        yield* w.say('manager', 'It is thirteen dollars BECAUSE of people who sneak in!', 'angry');
+        yield* w.say('granddad', 'So I been holding your prices up all these years? Then I want a commission!', 'grin');
+      } else if (a === 1) {
+        yield* w.say('huey', 'I would like to return the movie. It\'s barely used. I only watched it under protest.', 'deadpan');
+        yield* w.say('manager', 'You watched forty minutes!', 'angry');
+        yield* w.say('huey', 'I want those back as well.', 'deadpan');
+      } else {
+        yield* w.say('huey', 'While we\'re here, refund us for the first Soul Jet too.', 'deadpan');
+        yield* w.say('ruckus', 'Soul Jet One was a MASTERPIECE! Taught me never to board no airplane, bus or elevator run by anybody who look like me!', 'grin');
+        yield* w.say('huey', 'You drive the school bus, Ruckus.', 'deadpan');
+        yield* w.say('ruckus', 'And I don\'t trust myself one bit!', 'grin');
+      }
+      jz.rig.setPose('cheer', 12);
+      yield* w.say('jazmine', 'I\'ll pay! I have thirteen dollars! Take it! I just want to stop being a criminal!', 'worry');
+      yield* w.say('granddad', 'Jazmine, NO! That\'s how they get you!', 'shock');
+      yield* w.say('manager', 'Thank you, young lady. ONE of you is forgiven.', 'grin');
+      gd.rig.setPose('pointUp', 12);
+      yield* w.say('granddad', 'Hold on now. She paid. That means we got a ticket. That means somebody in this building owes ME a seat.', 'smirk');
+      yield* w.say('ruckus', 'OUT!', 'shout');
+      yield* w.say('riley', 'Ay, can we at least get the chicken back?', 'smirk');
+      yield* w.say('ruckus', 'That chicken is EVIDENCE. Delicious, delicious evidence.', 'grin');
+      yield* w.fadeOut(0.4);
+      S.end(); w.cine(false);
+    }],
+    *outro(w) {
+      w.setBg('block'); w.music('house', 0);
+      const bx = BX(w);
+      w.place(bx(2300), 1);
+      const gd = w.npc('granddad', bx(2430), { face: -1, pose: 'armsCrossed' }), ri = w.npc('riley', bx(2180), { face: 1, pose: 'lean' }), jz = w.npc('jazmine', bx(2070), { face: 1, expr: 'worry' });
+      w.look(bx(2300), 1.35);
+      yield* w.fadeIn(0.5);
+      yield* w.narr('We were banned for life from the Woodcrest Twelve. Granddad says it doesn\'t count, because officially we were never there.');
+      yield* w.say('granddad', 'Thirteen dollars. And they wonder why people steal.', 'scowl');
+      w.player.face = -1;
+      yield* w.say('riley', 'So how it end? Do the plane ever take off?', 'smirk');
+      yield* w.say('huey', 'No. That\'s the whole movie. It\'s called "Still Delayed".', 'deadpan');
+      yield* w.say('riley', '...Dang. That\'s deep.', 'shock');
+      yield* w.say('huey', 'It is not deep.', 'deadpan');
+      yield* w.say('jazmine', 'I\'m telling my daddy everything. And the police. And my teacher.', 'worry');
+      yield* w.say('granddad', 'Snitches don\'t get pound cake.', 'deadpan');
+      yield* w.say('jazmine', '...I didn\'t see anything.', 'worry');
+      yield* w.narr('I never got one person to boycott that movie. It made two hundred million dollars. Part three is in production. Granddad can\'t wait. He refuses to pay.');
+      gd.gone = ri.gone = jz.gone = true;
+    },
   });
 })();

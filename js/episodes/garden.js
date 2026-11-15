@@ -129,6 +129,7 @@
         if (b === 0) { yield* w.say('granddad', 'Why\'d you say it like there\'s a whole list of other stuff?', 'worry'); yield* w.say('huey', 'There\'s a whole list of other stuff.', 'deadpan'); }
         else if (b === 1) yield* w.say('granddad', '"Nothing" is the sound you gon\' make while I whoop your narrow ass in front of a string quartet.', 'angry');
         else yield* w.say('granddad', 'Then you say "I enjoy cheese" and you back away slow. Like the Queen walked in.', 'deadpan');
+        yield* w.say('granddad', 'And Huey. Embarrass me in front of that man and I will whoop you so thorough your DREAMS gon\' come out limping.', 'angry');
         yield* w.say('riley', 'What about me, Granddad? What\'s my rule?', 'grin');
         gd.rig.setPose('handsHips', 12);
         yield* w.say('granddad', 'Don\'t steal nothing that won\'t fit in a pocket.', 'deadpan');
@@ -163,7 +164,7 @@
         [bx(860), gd, 'Walk like you got equity.'],
         [bx(1000), ri, 'Why everybody jogging? Who chasing them?'],
         [bx(1140), gd, 'That\'s cardio. Rich folks run for no reason.'],
-        [bx(1280), ri, 'This whole street smell like sunscreen.'],
+        [bx(1280), ri, 'This whole street smell like sunscreen and bullshit.'],
       ]));
       yield* w.goTo(bx(1460), 'STROLL TO THE WUNCLER ESTATE');
       yield* drain(talk);

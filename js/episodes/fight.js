@@ -85,7 +85,7 @@
       }
       yield* w.say('stink', `And you, old {n}. You smell like discount aftershave and a man who claps when the plane lands.`, 'smirk');
       yield* w.say('stink', `I can HEAR how ugly you is. Your face makin' a noise. Sound like a wet shoe.`, 'grin');
-      yield* w.say('riley', `Granddad, he COOKIN' you! Say somethin'! Say somethin' about his momma!`, 'grin');
+      yield* w.say('riley', `Granddad, this {n} COOKIN' you! Say somethin'! Say somethin' about his momma!`, 'grin');
       gd.rig.setPose('think', 12);
       yield* w.say('granddad', `Your... your momma's so old...`, 'worry');
       yield* w.say('stink', `My momma's dead, {n}, and she STILL hit harder than you. Next.`, 'grin');
@@ -239,7 +239,7 @@
         [`I jumped! Tell me I jumped!`, `HYAH! ...That one felt professional.`, `Got him! ...Was that the mailbox?`, `I'm lightnin'! I'm... I need to sit down.`], `Yo feet ain't leave the ground, Granddad.`);
       if (hits < 5 && !AUTO()) { yield* w.fail('The student learned nothing, because the teacher demonstrated nothing.'); return; }
       yield* scene((function* () {
-        yield* w.say('riley', `Day six update for the fans: he still trash. But he trash with CONFIDENCE.`, 'grin');
+        yield* w.say('riley', `Day six update for the fans: this {n} still trash. But he trash with CONFIDENCE.`, 'grin');
         gd.rig.setPose('cheer', 12);
         yield* w.say('granddad', `I feel dangerous. I feel like a panther. A panther with a little arthritis.`, 'grin');
         yield* w.say('huey', `You are stronger than he is, you can see, and you are terrified. That is the entire scouting report.`, 'deadpan');
@@ -364,7 +364,7 @@
         yield* w.narr(`No temple. No monks. No mountain. The public record says: retired, widowed, banned from four churches and a bowling alley.`);
         yield* w.narr(`Neighbours describe his fighting style as "falls forward, swinging". He never trained a day. He hates so hard he is never afraid. And he got lucky.`);
         yield* w.say('huey', `Granddad. Listen. He has no training and no powers. He is just mean, and you got scared.`, 'deadpan');
-        yield* w.say('granddad', `So you sayin' I can TAKE him?`, 'grin');
+        yield* w.say('granddad', `So you sayin' I can TAKE this {n}?`, 'grin');
         yield* w.say('huey', `You could have taken him the first time. You could also still go home.`, 'deadpan');
         yield* w.say('granddad', `Too late. Ruckus sold tickets.`, 'scowl');
         yield* w.say('ruckus', `In this corner! A hero, a patriot, a blind man who hates with the pure heart of a customer service line: Colonel H. Stinkmeaner!`, 'shout');
@@ -435,7 +435,7 @@
       w.look(X(1240), 1.35);
       yield* w.fadeIn(0.5);
       yield* w.narr(`It turns out that if you take a frightened man and train him for six days, he does not become brave. He becomes a frightened man who knows how to hit.`);
-      yield* w.say('riley', `Granddad. He done been stopped movin'. You been whoopin' a nap.`, 'worry');
+      yield* w.say('riley', `Granddad. This {n} done been stopped movin'. You been whoopin' a nap.`, 'worry');
       yield* w.say('ruckus', `Get up, Colonel! I got two dollars and a dream ridin' on you! ...Colonel?`, 'worry');
       yield* w.say('tom', `Oh no. Oh no no no. I'm a lawyer, not a doctor, but I know what "no" looks like!`, 'shock');
       yield* w.narr(`Colonel H. Stinkmeaner was pronounced dead in the parking lot of the Woodcrest Galleria, forty feet from the space that started it.`);
