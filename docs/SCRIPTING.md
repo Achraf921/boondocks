@@ -1,6 +1,6 @@
 # Writing episodes for The Woodcrest Files
 
-Episodes are plain script files in `js/episodes/<id>.js`. Each one calls `BD.episode({...})`, which replaces the built-in mission with the same `id` (`garden`, `fight`, `theater`, `home`, `strikes`, `hate`). Board position and unlock rules carry over, so you only supply the story.
+Episodes are plain script files in `js/episodes/<id>.js`. Each one calls `BD.episode({...})`, which replaces the built-in mission with the same `id` (`garden`, `dinner`, `fight`, `inspector`, `itis`, `theater`, `strikes`, `home`, `hate`). Episode number, board position and unlock rules are set centrally and carry over (whatever `ep` you write is ignored), so you only supply the story.
 
 Read these before writing: `js/missions.js` (the current episodes and the enemy library), the "errands & story beats" and "mission flow" sections of `js/game.js`, and `BD.CAST` in `js/cast.js`.
 
@@ -29,7 +29,7 @@ Scripts are generators run as coroutines: `yield 0.5` waits half a second, `yiel
 ## World helpers (`w`)
 
 Staging
-- `w.setBg(name, state)`: backdrops are `hill` (1600 wide), `garden` (2800), `ink` (1900), `lobby` (3400), `theater` (1500), `house` (1700, landing platform at y=-210 from x=1180), `street` (2200, night rain), plus three arriving shortly: `block` (4200, the daytime Woodcrest street: Freeman house door near x=700, DuBois house near x=1500, bus stop near x=2300, Wuncler estate gate near x=3200, path to the hill at the far right), `lot` (2400, mall parking lot by day), `hell` (2000, fire and brimstone). Until those land, a missing name falls back to `street`, so you can use them now. State fields: `{ heat }` garden, `{ dark, flash, ghost }` house, `{ flash }` street. Call `w.relight()` after changing `w.st` fields mid-scene.
+- `w.setBg(name, state)`: backdrops are `hill` (1600 wide), `garden` (2800), `ink` (1900), `lobby` (3400), `theater` (1500), `house` (1700, landing platform at y=-210 from x=1180), `street` (2200, night rain), plus three arriving shortly: `block` (4200, the daytime Woodcrest street: Freeman house door near x=700, DuBois house near x=1500, bus stop near x=2300, Wuncler estate gate near x=3200, path to the hill at the far right), `lot` (2400, mall parking lot by day), `hell` (2000, fire and brimstone), `diner` (1800, the inside of a soul food restaurant). Until those land, a missing name falls back to `street`, so you can use them now. State fields: `{ heat }` garden, `{ dark, flash, ghost }` house, `{ flash }` street. Call `w.relight()` after changing `w.st` fields mid-scene.
 - `w.place(x, face)` puts Huey somewhere. `w.minX` / `w.maxX` bound the arena (reset by `setBg`). `w.zoom` is the free-roam camera zoom (default 1.35).
 - `w.music(track, intensity)`: tracks are `title, board, garden, ink, stealth, duel, house, possessed, finale, credits`. Intensity 0..1.
 - `w.fadeOut(t)`, `w.fadeIn(t)`, `w.wait(t)` (generators). `w.look(x, zoom)` locks the camera; `w.look(null)` frees it.
@@ -38,7 +38,7 @@ Staging
 Characters
 - `w.npc(id, x, { face, pose, expr, prop, variant, idle })` returns a story character. `w.foe(id, x, { hp, ai, data, boss, title, name, speed, idle, prop, variant, armor, brk, block, expr })` returns an enemy.
 - Story characters: `f.face = ±1`, `f.rig.setPose(name, 12)`, `f.rig.expr = 'shock'`, `f.gone = true` to remove. `yield* w.walk(f, x, speed, 'walk'|'run'|'patrol'|'shuffle'|'sneak')`. Huey in a cutscene: `w.player.pose('point', 12, 'deadpan')`, `w.player.face = -1`.
-- Cast ids: `huey riley jazmine granddad tom tomP ruckus (variant 1 = usher uniform) stink stinkInk slick wuncler ed3 rummy bushido guest (variants 0-2) tux (0-1) guard manager (variant 1 = plain usher) crab gripe pist`. Do not invent new ids.
+- Cast ids: `huey riley jazmine granddad tom tomP ruckus (variant 1 = usher uniform) stink stinkInk slick cristal wuncler ed3 rummy bushido guest (variants 0-2) tux (0-1) guard manager (variant 1 = plain usher) crab gripe pist`. Do not invent new ids.
 - Poses: see `BD.POSES` in `js/rig.js` (`stand, stance, armsCrossed, handsHips, point, pointUp, shrug, think, facepalm, cheer, cower, sit, lean, hurt, stagger, down, crouch, hold, caneLean, beltHold, aim, flashlight, overW, ...`). Expressions: `neutral, scowl, angry, shout, smirk, grin, shock, worry, deadpan, pain, closed, sly`.
 - Props: `cane, blade, mallet, bottle, nunchaku, pistol, flashlight, belt, trap, umbrella, purse, mic`.
 
@@ -91,6 +91,10 @@ The owner's verdict on the previous draft was that it missed the show's humour a
 - Ed Wuncler Sr.: genial billionaire who says monstrous things politely. Ed III and Gin Rummy: armed, confident, catastrophically stupid; Rummy explains why the stupid plan is actually smart.
 - Jazmine: sweet, gullible, believes everything, cries easily.
 
-**What makes it this show.** Satire with a target: class, gentrified suburbia, celebrity worship, bad movies, consumerism, generational hypocrisy, people being proud of exactly the wrong thing. Huey states an uncomfortable truth; everyone else misses the point in their own specific way. Jokes come from character, escalate, and get called back later. Let characters interrupt, argue and talk over the action. Mild language is fine (damn, hell, ass).
+**Tone: harder than you think.** This is a TV-MA satire and the owner called the first draft soft. Twice. Characters curse freely (shit, damn, hell, ass, bullshit, "bitch-ass" as a general insult), tear into each other, and say the quiet part out loud. Granddad describes the whooping in detail before delivering it. Stinkmeaner is foul and creative. Riley talks like an eight-year-old who learned English from rap videos. Nobody is nice for more than a sentence.
 
-**Hard limits.** No slurs of any kind, including the n-word. No real people, real brands or real film titles: invent them. Do not quote lines from the show; write new ones in the same voices. No sexual content.
+**What makes it this show.** Race, class and hypocrisy are the subject, so write about them head-on. Clueless rich white guests who adore Huey's "energy" and ask to touch his hair. Uncle Ruckus's elaborate self-hating theories, invented diseases and fake history, delivered with total conviction: he is always the butt of the joke, and everyone around him is appalled or exhausted. Tom's terror of being the kind of man who goes to prison. Granddad's civil-rights stories that collapse under one question. Woodcrest neighbours who are scared of the Freemans and desperate to seem cool about it. Huey states an uncomfortable truth; everyone misses the point in their own specific way. Jokes come from character, escalate, and get called back. Let people interrupt, argue and talk over the action. Punch at power, vanity and stupidity.
+
+**The vernacular token.** The show's Black characters use one particular word constantly as a casual term of address among themselves. Never spell that word. Wherever the show would use it, write the token `{n}` (`{N}` to start a sentence, `{ns}` / `{Ns}` for the plural), for example `'{N}, please.'` or `'These {ns} is crazy.'` The engine swaps the token for a word the owner configures, on screen and in speech, so lines must read naturally with a casual word like "homie" in that slot too. Use it the way the show does: often and offhandedly, from Riley, Granddad, Stinkmeaner, A Pimp Named Slickback, and now and then Huey. Never from a non-Black character, never as a racist attack, and never from Uncle Ruckus.
+
+**Hard limits.** No slur spelled out, ever. No joke whose punchline is a woman getting hurt, and no violence against Cristal or Jazmine. No real people, real brands or real film titles: invent them. Do not quote lines from the show; write new ones in the same voices. No sexual content.

@@ -55,8 +55,8 @@
   };
 
   /* ----------------------------------------------------------------- board */
-  const THUMB = { garden: ['garden', 560, { heat: 0.4 }], fight: ['ink', 900, {}], theater: ['lobby', 1700, {}], home: ['house', 640, {}], strikes: ['house', 640, { dark: 1, ghost: 1 }], hate: ['street', 1300, {}] };
-  const SHORT = { garden: 'GARDEN', fight: 'FIGHT', theater: 'OR DIE', home: 'HOME', strikes: 'STRIKE', hate: 'HATE' };
+  const THUMB = { garden: ['garden', 560, { heat: 0.4 }], dinner: ['house', 640, {}], fight: ['ink', 900, {}], inspector: ['street', 1300, {}], itis: ['house', 900, {}], theater: ['lobby', 1700, {}], home: ['house', 640, {}], strikes: ['house', 640, { dark: 1, ghost: 1 }], hate: ['street', 1300, {}] };
+  const SHORT = { garden: 'GARDEN', dinner: 'DINNER', fight: 'FIGHT', inspector: 'INSPECT', itis: 'THE ITIS', theater: 'OR DIE', home: 'HOME', strikes: 'STRIKE', hate: 'HATE' };
   let cork = null;
   const thumbs = {};
   function buildCork() {
@@ -66,9 +66,9 @@
     g.fillStyle = '#3a2416'; g.fillRect(0, 0, FW, 14); g.fillRect(0, 0, 5, FH); g.fillRect(FW - 5, 0, 5, FH); g.fillRect(0, 190, FW, FH - 190);
     g.fillStyle = '#5a3a22'; g.fillRect(0, 12, FW, 2); g.fillRect(3, 0, 2, 190); g.fillRect(FW - 5, 0, 2, 190); g.fillRect(0, 190, FW, 2);
     const note = (x, y, w, h, col, lines) => { g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(x + 2, y + 2, w, h); g.fillStyle = col; g.fillRect(x, y, w, h); g.fillStyle = '#c7352e'; g.fillRect(x + (w >> 1) - 1, y - 1, 3, 3); lines.forEach((l, i) => T.draw(g, l, x + 3, y + 5 + i * 9, { color: '#3a2416' })); };
-    note(12, 150, 76, 34, '#f2df7a', ['FOLLOW THE', 'MONEY >', 'WUNCLER']);
-    note(368, 146, 100, 34, '#f1e6d2', ['WHO KEEPS LETTING', 'STINKMEANER', 'OUT OF HELL?']);
-    note(300, 18, 88, 16, '#bfe3f2', ['TRUST NOBODY.']);
+    note(8, 22, 76, 34, '#f2df7a', ['FOLLOW THE', 'MONEY >', 'WUNCLER']);
+    note(166, 94, 84, 16, '#bfe3f2', ['TRUST NOBODY.']);
+    note(392, 150, 78, 34, '#f1e6d2', ['WHO LETS', 'STINKMEANER', 'OUT OF HELL?']);
     note(398, 20, 70, 25, '#f2c0c0', ['ASK RUCKUS', '(DO NOT)']);
     return c;
   }

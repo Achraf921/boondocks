@@ -61,7 +61,7 @@
     id: 'hub', hub: true, noCard: true, bg: 'block', title: 'WOODCREST', needs: [],
     phases: [function* (w) {
       const bg = BD.Backgrounds.block, S = (bg && bg.spots) || { freeman: 700, dubois: 1500, bus: 2300, wuncler: 3200, hill: 3900 };
-      const at = { garden: S.wuncler, fight: S.freeman + 430, theater: S.bus, home: S.freeman, strikes: S.dubois, hate: 280 };
+      const at = { garden: S.wuncler, dinner: S.freeman, fight: S.freeman + 430, inspector: S.dubois, itis: S.bus + 420, theater: S.bus, strikes: S.dubois + 300, home: S.freeman - 380, hate: S.hill };
       w.setBg('block'); w.music('board', 0.5); w.noFight = true; w.zoom = 1.3;
       w.place(U.clamp(BD.hubX || S.freeman + 100, 120, w.bg.width - 120), 1);
       const folks = [

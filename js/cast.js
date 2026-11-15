@@ -399,6 +399,21 @@
     g.beginPath(); g.moveTo(-0.14 * R, 0.7 * R); g.quadraticCurveTo(0.16 * R, 0.6 * R, 0.46 * R, 0.7 * R); g.stroke(); g.lineCap = 'butt';
   }
 
+  // Cristal, "like the champagne": Granddad's very new, very expensive girlfriend
+  function cristalHead(g, R, c, e, rig, flat) {
+    const ol = rig.ol, sw = rig.hair.x * 0.6, k = { ol, jaw: 1.1, chin: 0.16, wide: 0.9, eye: 0.88, eyeY: 0.02, brow: 0.05, noseS: 0.8, mouthY: 0.72, mouthW: 0.9 };
+    g.fillStyle = c.hair; g.strokeStyle = c.out; g.lineWidth = ol * 2;
+    g.beginPath(); g.moveTo(-1.0 * R, -0.5 * R); g.bezierCurveTo(-1.3 * R, 0.4 * R, -1.3 * R + sw, 1.3 * R, -0.9 * R + sw, 1.9 * R); g.lineTo(0.9 * R + sw, 1.8 * R);
+    g.bezierCurveTo(1.3 * R + sw, 1.2 * R, 1.2 * R, 0.3 * R, 0.98 * R, -0.5 * R); g.closePath(); g.stroke(); g.fill();
+    skull(g, R, c, k);
+    hairCap(g, R, c, ol, c.hair, { line: -0.5, vol: 0.12 });
+    if (flat) return;
+    g.strokeStyle = c.gold; g.lineWidth = ol * 1.8; circ(g, -0.98 * R, 0.52 * R, 0.17 * R); g.stroke();
+    g.fillStyle = 'rgba(150,60,140,0.5)'; g.beginPath(); g.ellipse(-0.22 * R, -0.22 * R, 0.28 * R, 0.12 * R, 0, 0, TAU); g.fill(); g.beginPath(); g.ellipse(0.5 * R, -0.22 * R, 0.24 * R, 0.12 * R, 0, 0, TAU); g.fill();
+    features(g, R, c, e, k);
+    g.strokeStyle = c.out; g.lineWidth = ol; g.beginPath(); g.moveTo(-0.54 * R, -0.04 * R); g.lineTo(-0.66 * R, -0.14 * R); g.moveTo(0.78 * R, -0.04 * R); g.lineTo(0.88 * R, -0.14 * R); g.stroke();
+  }
+
   /* -------------------------------------------------------------- the cast */
   const big = (k) => (b) => ({ wShoulder: b.wShoulder * k, wWaist: b.wWaist * (k + 0.1), rThigh: b.rThigh * k, rKnee: b.rKnee * k, rShoulder: b.rShoulder * k, rElbow: b.rElbow * k, rWrist: b.rWrist * (k * 0.94), hand: b.hand * 1.1 });
 
@@ -590,6 +605,24 @@
         g.strokeStyle = c.shirt2; g.lineWidth = 4;
         g.beginPath(); g.moveTo(ws * 0.9, -L - 2); g.lineTo(ws * 0.1, -L * 0.42); g.moveTo(ws * 0.04, -L - 2); g.lineTo(ws * 0.5, -L * 0.62); g.stroke();
         g.fillStyle = c.shirt2; g.fillRect(-ws - 8, -L * 0.24, ws * 2 + 30, 7);
+      },
+    },
+    cristal: {
+      name: 'Cristal', full: 'Cristal, like the champagne', color: '#c2263a', voice: 1.25,
+      build: 'adult', scale: 0.92, sleeve: 'none', hem: 6, legs: 'bare', idle: 'handsHips', face: { lid: 0.3, brow: 0.3, mouth: 'smirk' },
+      dims: (b) => ({ wShoulder: b.wShoulder - 7, wWaist: b.wWaist - 6, rThigh: b.rThigh - 2, rShoulder: b.rShoulder - 1.6, rElbow: b.rElbow - 1 }),
+      colors: { skin: '#b07a50', hair: '#1f1512', shirt: '#c2263a', gold: '#f2d15a', pants: '#c2263a', shoe: '#c2263a', eye: EYE, iris: '#4a2416' },
+      head: cristalHead,
+      outfit(g, L, ws, ww, hem, c) {
+        g.fillStyle = c.skin; g.beginPath(); g.ellipse(ws * 0.36, -L - 3, ws * 0.5, 9, 0, 0, TAU); g.fill();
+        g.strokeStyle = c.gold; g.lineWidth = 1.8; g.beginPath(); g.moveTo(ws * 0.0, -L - 2); g.quadraticCurveTo(ws * 0.36, -L * 0.7, ws * 0.76, -L - 1); g.stroke();
+      },
+      skirt(g, J, c, r) {
+        const w = r.b.wWaist * 0.5;
+        g.save(); g.translate(J.hip[0], J.hip[1]); g.rotate(J.torsoAng * 0.4);
+        g.fillStyle = c.shirt; g.strokeStyle = c.out; g.lineWidth = r.ol * 2;
+        g.beginPath(); g.moveTo(-w, -4); g.lineTo(w + 1, -4); g.lineTo(w + 6, 34); g.quadraticCurveTo(0, 38, -w - 5, 34); g.closePath(); g.stroke(); g.fill();
+        g.restore();
       },
     },
     guest: {

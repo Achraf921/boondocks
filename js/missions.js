@@ -6,7 +6,7 @@
   const G = 2400;
   /** enemy attack with sane defaults: slow readable wind-up, a "!" tell, adult-height hitbox */
   const E = (o) => Object.assign({ poses: ['crossW', 'cross'], wind: 0.46, act: 0.1, rec: 0.5, dmg: 8, reach: 112, h: [-180, -6], kb: 260, lunge: 190, stop: 0.07, sfx: 'whoosh', hs: 'hit_heavy', tell: true, windRate: 9 }, o);
-  const bark = (f, s, col) => FX.text(f.x, f.y - f.hh - 44, s, col || '#ffffff');
+  const bark = (f, s, col) => FX.text(f.x, f.y - f.hh - 44, BD.slang(s).toUpperCase(), col || '#ffffff');
   const sub = (w, gen) => w.subs.push(new BD.Co(gen));
   const near = (w, dx) => U.clamp(w.player.x + dx, w.minX + 20, w.maxX - 20);
 
@@ -238,7 +238,9 @@
   /** an episode file replaces the built-in mission with the same id (board position and unlock rules carry over) */
   BD.episode = (def) => {
     const i = BD.MISSIONS.findIndex((m) => m.id === def.id);
-    if (i < 0) BD.MISSIONS.push(def); else BD.MISSIONS[i] = Object.assign({}, BD.MISSIONS[i], def);
+    if (i < 0) { BD.MISSIONS.push(def); return; }
+    const base = BD.MISSIONS[i];   // numbering, board position and unlock rules are set centrally (GRAPH below)
+    BD.MISSIONS[i] = Object.assign({}, base, def, { ep: base.ep, x: base.x, y: base.y, needs: base.needs });
   };
 
   /* ============================================================ missions */
@@ -604,4 +606,19 @@
       yield (dt) => (t += dt) > 30 || (t > 2 && BD.Input.take('confirm'));
     },
   });
+
+  /* ------------------------------------------------------------ storyline */
+  // Nine episodes in broadcast order. Two threads, life in Woodcrest and the Stinkmeaner saga, meet in the finale.
+  const stub = (id, title, src, bg, blurb) => ({ id, title, src, bg, blurb, phases: [function* (w) {
+    w.setBg(bg); w.place(400, 1); yield* w.fadeIn(0.3); w.cine(true); yield* w.narr('This case file is still being written.'); w.cine(false);
+  }] });
+  M.push(stub('dinner', 'GUESS HOE\'S COMING TO DINNER', 'inspired by Season 1, Episode 3', 'house', 'Granddad has a new girlfriend half his age. The boys know exactly who to call: A Pimp Named Slickback.'));
+  M.push(stub('inspector', 'A DATE WITH THE HEALTH INSPECTOR', 'inspired by Season 1, Episode 5', 'street', 'Tom is arrested for a murder he is far too nervous to commit. Ed Wuncler III and Gin Rummy offer to help. Nobody should let them.'));
+  M.push(stub('itis', 'THE ITIS', 'inspired by Season 1, Episode 10', 'house', 'Granddad opens a soul food restaurant with Ed Wuncler\'s money. The food is delicious. The neighborhood never wakes up from it.'));
+  const GRAPH = {
+    garden: [1, 44, 104, []], dinner: [2, 120, 58, ['garden']], fight: [3, 120, 150, ['garden']], inspector: [4, 196, 58, ['dinner']], itis: [5, 272, 58, ['inspector']],
+    theater: [6, 348, 58, ['itis']], strikes: [7, 272, 150, ['fight', 'itis']], home: [8, 348, 150, ['itis']], hate: [9, 424, 104, ['theater', 'strikes', 'home']],
+  };
+  for (const m of M) { const g = GRAPH[m.id]; m.ep = 'EPISODE ' + g[0]; m.x = g[1]; m.y = g[2]; m.needs = g[3]; }
+  M.sort((a, b) => GRAPH[a.id][0] - GRAPH[b.id][0]);
 })();

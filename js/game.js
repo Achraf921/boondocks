@@ -294,11 +294,21 @@
         if (!d.noCard) yield* this.titleCard();
         if (d.intro) { this.cine(true); yield* d.intro(this); this.cine(false); }
       }
-      for (this.phase = from; this.phase < d.phases.length; this.phase++) yield* d.phases[this.phase](this);
+      for (this.phase = from; this.phase < d.phases.length; this.phase++) { this.clearStage(); yield* d.phases[this.phase](this); }
       this.cine(true);
       if (d.outro) yield* d.outro(this);
       yield* this.fadeOut(0.6);
       this.done = true;
+    }
+    /** every phase starts on an empty stage: no leftover characters, side scripts, markers or objectives */
+    clearStage() {
+      for (const f of this.fighters) if (f !== this.player) f.gone = true;
+      this.fighters = [this.player]; this.shots.length = 0; this.subs.length = 0; this.tokens.length = 0;
+      this.boss = null; this.beams.length = 0; this.marks.length = 0; this.items = []; this.bubbles = []; this.pins = [];
+      this.mark = null; this.obj = null; this.objN = 0; this.clock = null; this.lock = false; this.qteS = null; this.pick = null;
+      this.alert = 0; this.noFight = false; this.camLock = null; this.slash = null;
+      BD.timeScale = 1; FX.dark = 0;
+      if (this.player.state === 'act' && !this.cineOn) this.player.set('idle');
     }
     retry() {
       this.stats.retries++;
@@ -330,6 +340,7 @@
     /** dialogue line. who = cast id, or null for Huey's voice-over */
     *say(who, text, expr, opts) {
       if (this.skip) return;
+      text = BD.slang(text);
       const d = (this.dlg = { who, text, n: 0, expr: expr || null, lines: T.wrap(text, who ? 56 : 66), opts: opts || {}, t: 0 });
       const voice = who ? BD.CAST[who].voice : 1.1;
       let blip = 0;
@@ -398,6 +409,7 @@
     objective(s) { this.obj = s || null; this.objN = 0; }
     /** speech bubble over a character; the action keeps going */
     bubble(f, text, dur) {
+      text = BD.slang(text);
       this.bubbles = this.bubbles.filter((b) => b.f !== f);
       this.bubbles.push({ f, lines: T.wrap(text, 26), t: dur || Math.max(2.2, text.length * 0.07) });
       if (A().speak) A().speak(f.id, text, true);
@@ -454,7 +466,8 @@
     /** dialogue choice menu; returns the index picked */
     *choice(who, prompt, options) {
       if (BD.AUTOPLAY || this.skip) return 0;
-      const c = (this.pick = { who, prompt, options, sel: 0 });
+      options = options.map(BD.slang);
+      const c = (this.pick = { who, prompt: BD.slang(prompt), options, sel: 0 });
       In.clear();
       yield () => {
         if (In.take('up')) { c.sel = (c.sel + options.length - 1) % options.length; A().sfx('ui_move'); }
